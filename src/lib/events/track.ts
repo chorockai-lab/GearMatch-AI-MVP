@@ -2,9 +2,12 @@
 // Runner Card completed, first run, revisit, ITEMS entry).
 //   • server mode: append-only insert into `events` (RLS: own rows). Fire-and-forget — never blocks or breaks the UI.
 //   • local mode : not sent anywhere (demo builds collect nothing).
+//   • PostHog    : the same event is also sent to PostHog when NEXT_PUBLIC_POSTHOG_ENABLED allows it (lib/analytics/posthog.ts),
+//                  with the Supabase user id as distinct_id. The Supabase write never depends on PostHog.
 //   • Props must not contain personal data (no body measurements, no free text). Keep values small.
 import { STORAGE_MODE } from "@/lib/config";
 import { ensureUserId, getSupabase } from "@/lib/supabase/client";
+import { capturePostHog } from "@/lib/analytics/posthog";
 
 export const EVENT_NAMES = [
   "app_open", // once per browser session (revisit metric)
@@ -54,9 +57,13 @@ export function track(name: EventName, props: Props = {}): void {
   if (STORAGE_MODE !== "server" || typeof window === "undefined") return;
   const sb = getSupabase();
   if (!sb) return;
-  const row = { name, props: isQaSession() ? { ...props, qa: true } : props, path: window.location.pathname.slice(0, 200), client_at: new Date().toISOString() };
+  const qa = isQaSession();
+  const row = { name, props: qa ? { ...props, qa: true } : props, path: window.location.pathname.slice(0, 200), client_at: new Date().toISOString() };
   void ensureUserId()
-    .then(() => sb.from("events").insert(row))
+    .then((userId) => {
+      capturePostHog(name, props, userId, qa);
+      return sb.from("events").insert(row);
+    })
     .then((r) => {
       if (r.error && process.env.NODE_ENV !== "production") console.warn("[track]", name, r.error.message);
     })
