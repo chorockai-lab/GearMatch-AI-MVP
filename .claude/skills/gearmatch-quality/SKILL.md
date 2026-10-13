@@ -23,8 +23,17 @@ npm run typecheck
 npm run lint
 npm run test:identity
 npm run test:onboarding
+npm run test:stats
+npm run verify:sql
 npm run check:assets
 npm run build
+```
+
+서버 저장(Supabase) 관련 변경이면 추가로 실행한다(실제 DB 사용, 검증용 익명 사용자가 생김):
+
+```bash
+npm run check:supabase
+npm run test:rls
 ```
 
 ## 3. 민감정보·불필요 파일 검사 (Push 전 필수 — 저장소는 Public)
@@ -51,7 +60,7 @@ Landing → Q1~Q5(이전으로 답 수정 포함) → Reveal → Profile 1 → P
 
 | 항목 | 결과 | 근거 |
 |---|---|---|
-| typecheck / lint / identity / onboarding / assets / build | 통과·실패 | 명령 출력 |
+| typecheck / lint / identity / onboarding / stats / sql / assets / build | 통과·실패 | 명령 출력 |
 | 화면 흐름 390 / 320 | 확인·미확인 | 스크린샷 |
 | 민감정보 검사 | clean / 발견 | 명령 출력 |
 | CI | 성공·실패·대기 | PR 링크 |

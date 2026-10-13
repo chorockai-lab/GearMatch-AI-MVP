@@ -38,6 +38,11 @@ npm run dev             # 개발 서버 실행
 ```bash
 npm run test:identity   # 동물 판정 로직: 명세 §4·§7과 일치하는지 (3,125개 조합 전부)
 npm run check:assets    # 캐릭터 PNG 23개가 있고 64×48인지
+npm run test:onboarding # 온보딩 화면 이동 규칙
+npm run test:stats      # 통계 계산 정의
+npm run verify:sql      # 마이그레이션·RLS·분석 SQL (로컬 Postgres, 네트워크 없음)
+npm run check:supabase  # 실제 Supabase 연결·테이블 확인 (.env.local 필요)
+npm run test:rls        # 실제 Supabase RLS 격리 확인 (.env.local 필요)
 npm run typecheck       # 타입 검사
 npm run lint            # ESLint
 npm run build           # 배포용 빌드
@@ -57,7 +62,9 @@ src/app/              화면(라우트)
   onboarding/         habits(프로필 1) · runner(프로필 2) · shoe(지금 신는 러닝화)
   running/            RUNNING Main
   dev/ dev/states/    개발 미리보기 · 8종 × 상태 QA 화면
-  items/ runs/new/ stats/ profile/ privacy/   다음 STEP에서 구현할 자리(임시 화면)
+  runs/ runs/new/ runs/[id]/(edit/)   러닝 기록 History · 입력 · 상세 · 수정/삭제
+  stats/ stats/detail/  Stats Card · 상세 통계
+  items/ profile/ privacy/   다음 STEP에서 구현할 자리(임시 화면)
 src/components/
   onboarding/         Landing 장면 · Runner Test · Reveal · Profile · Current Shoe · 공통 Flow 부품
   running/            RunnerScene(사람+동물 장면) · RunnerCard · RecentRuns · RunningMainView
@@ -69,15 +76,20 @@ src/lib/
   assets/sprites.ts   PNG 기준점(bbox) 데이터
   demo/               DEMO 데이터 (실제 데이터와 구분, 화면에 DEMO DATA 표시)
   supabase/           Supabase 연결 (환경변수가 없으면 DEMO 모드)
-supabase/migrations/  DB 스키마 초안 (아직 적용 안 함, STEP 3)
+supabase/migrations/  DB 스키마 (2026-10-13 SQL Editor로 적용 — docs/SUPABASE.md)
 scripts/              판정 테스트 · 에셋 검사
 docs/asset-source/    스프라이트 원본 데이터 · 내보내기 검사 기록
 ```
 
-## 3. 지금 상태 (STEP 2)
+## 3. 지금 상태 (STEP 3)
 
-- 온보딩 결과(동물·답변·프로필·신발)는 **이 브라우저에만 임시 저장**됩니다(localStorage). 서버 저장이 아니므로 다른 브라우저·시크릿 모드·사이트 데이터 삭제 시 사라집니다. STEP 3에서 Supabase로 교체합니다.
-- 러닝 기록 저장은 STEP 3에서 연결합니다. `?state=` 미리보기 화면의 기록 값은 모두 **DEMO**입니다.
+- 저장 위치는 `NEXT_PUBLIC_DATA_MODE`로 정해집니다(빌드 시 고정).
+  - `demo`(기본): 온보딩·러닝 기록을 **이 브라우저에만 임시 저장**(localStorage). 서버 저장 아님.
+  - `real` + Supabase 값: 익명 사용자로 Supabase에 저장(RLS로 본인 데이터만 접근). 사용자 행동 이벤트도 기록.
+  - 두 모드의 데이터는 섞이지 않습니다(DEMO 기록은 서버로 옮기지 않음).
+- 익명 사용자는 같은 브라우저에서만 이어집니다. 다른 브라우저·시크릿 창·사이트 데이터 삭제 시 복구할 수 없습니다.
+- `?state=` 미리보기 화면의 기록 값은 모두 **DEMO**입니다.
+- Supabase 운영·마이그레이션 이력: [`docs/SUPABASE.md`](docs/SUPABASE.md) · 분석 쿼리: [`docs/ANALYTICS_QUERIES.md`](docs/ANALYTICS_QUERIES.md)
 - 카드 상태 규칙은 `src/lib/running/state-policy.ts` 한 곳에 모아 두었습니다(잠정 정책).
 - 캐릭터 배치 규칙(정수 ×3 확대 · 기준점 고정 · 동물 속도선이 사람을 가리지 않음)은 `src/components/running/RunnerScene.tsx`에 있습니다.
 
