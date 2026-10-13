@@ -1,9 +1,9 @@
 // Onboarding data access. Screens talk ONLY to `OnboardingRepository`.
 //
-// STEP 2: `localOnboardingRepository` keeps everything in this browser's localStorage.
+// `localOnboardingRepository` keeps everything in this browser's localStorage.
 //   ⚠ This is TEMPORARY client storage — not a server save. It is lost on another browser,
 //   in private mode, or when site data is cleared. Never describe it as saved to an account.
-// STEP 3: add a Supabase implementation of the same interface and swap `onboardingRepository`.
+// The Supabase implementation lives in server-repository.ts; store.ts picks one by STORAGE_MODE.
 import { evaluateIdentity, type Answers } from "@/lib/identity/scoring";
 import type { AnswerCode, QuestionId } from "@/lib/identity/questions";
 import { EMPTY_PROFILE, EMPTY_STATE, type IdentityRecord, type OnboardingState, type RunnerProfile } from "./types";
@@ -86,9 +86,6 @@ export const localOnboardingRepository: OnboardingRepository = {
     }
   },
 };
-
-/** The repository the app uses. STEP 3 swaps this for the Supabase implementation. */
-export const onboardingRepository: OnboardingRepository = localOnboardingRepository;
 
 // ── pure helpers ────────────────────────────────────────────────────────────
 

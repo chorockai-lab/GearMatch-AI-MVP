@@ -8,14 +8,18 @@ import { QUESTIONS, type AnswerCode } from "@/lib/identity/questions";
 import { completeAnswers, identityFromAnswers } from "@/lib/onboarding/repository";
 import { useOnboarding } from "@/lib/onboarding/useOnboarding";
 import { CheckIcon } from "@/components/ui/icons";
+import { SaveFailedBanner } from "@/components/ui/Feedback";
+import { track } from "@/lib/events/track";
+import { useTrackOnce } from "@/lib/events/useTrackOnce";
 import { FlowFrame, FlowLoading, FlowTopBar } from "./Flow";
 
 const ADVANCE_DELAY_MS = 220; // long enough to see the selected state
 
 export function RunnerTest({ n }: { n: number }) {
   const router = useRouter();
-  const { state, repo } = useOnboarding();
+  const { state, repo, error, reload } = useOnboarding();
   const [picked, setPicked] = useState<AnswerCode | null>(null);
+  const [failed, setFailed] = useState(false);
   const busy = useRef(false);
   const q = QUESTIONS[n - 1];
 
@@ -26,27 +30,37 @@ export function RunnerTest({ n }: { n: number }) {
     if (firstMissing >= 0 && firstMissing < n - 1) router.replace(`/test/${firstMissing + 1}`);
   }, [state, n, router]);
 
-  if (!state) return <FlowLoading />;
+  useTrackOnce("test_start", {}, n === 1 && Boolean(state));
+
+  if (!state) return <FlowLoading error={error} onRetry={reload} />;
   const current = picked ?? state.answers[q.id] ?? null;
 
   async function choose(code: AnswerCode) {
     if (busy.current) return;
     busy.current = true;
     setPicked(code);
-    const next = await repo.setAnswer(q.id, code);
-    await new Promise((r) => setTimeout(r, ADVANCE_DELAY_MS));
-    if (n < QUESTIONS.length) {
-      router.push(`/test/${n + 1}`);
-      return;
-    }
-    const answers = completeAnswers(next);
-    if (!answers) {
+    setFailed(false);
+    try {
+      const next = await repo.setAnswer(q.id, code);
+      await new Promise((r) => setTimeout(r, ADVANCE_DELAY_MS));
+      if (n < QUESTIONS.length) {
+        router.push(`/test/${n + 1}`);
+        return;
+      }
+      const answers = completeAnswers(next);
+      if (!answers) {
+        busy.current = false;
+        router.replace("/test/1");
+        return;
+      }
+      const identity = identityFromAnswers(answers);
+      await repo.saveIdentity(identity);
+      track("test_complete", { animal: identity.animal_type_v2, mixed_signal: identity.mixed_signal });
+      router.push("/reveal");
+    } catch {
       busy.current = false;
-      router.replace("/test/1");
-      return;
+      setFailed(true);
     }
-    await repo.saveIdentity(identityFromAnswers(answers));
-    router.push("/reveal");
   }
 
   return (
@@ -83,6 +97,7 @@ export function RunnerTest({ n }: { n: number }) {
           })}
         </ul>
         <p className="mt-5 mb-0 text-[13px] text-gm-g2">고르면 다음 질문으로 넘어가요.</p>
+        {failed && <div className="mt-4"><SaveFailedBanner message="저장하지 못했어요. 다시 골라 주세요." /></div>}
       </main>
     </FlowFrame>
   );

@@ -8,6 +8,8 @@ import { BODY_RANGES, INTEREST_DISTANCE, INTEREST_NONE } from "@/lib/onboarding/
 import { habitsComplete, nextOnboardingPath } from "@/lib/onboarding/repository";
 import { useOnboarding } from "@/lib/onboarding/useOnboarding";
 import { ChoiceButton, FlowFrame, FlowLoading, FlowTopBar, PrimaryButton } from "./Flow";
+import { SaveFailedBanner } from "@/components/ui/Feedback";
+import { track } from "@/lib/events/track";
 
 type BodyKey = keyof typeof BODY_RANGES;
 type Draft = Record<BodyKey, string> & { interest_distance: string | null };
@@ -54,7 +56,9 @@ function BodyInput({ id, value, onChange }: { id: BodyKey; value: string; onChan
 
 export function ProfileRunner() {
   const router = useRouter();
-  const { state, repo } = useOnboarding();
+  const { state, repo, error, reload } = useOnboarding();
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
 
   useEffect(() => {
@@ -67,7 +71,7 @@ export function ProfileRunner() {
     setDraft({ height_cm: toText(p.height_cm), weight_kg: toText(p.weight_kg), shoe_size_mm: toText(p.shoe_size_mm), interest_distance: p.interest_distance });
   }, [state, router]);
 
-  if (!state || !draft) return <FlowLoading />;
+  if (!state || !draft) return <FlowLoading error={error} onRetry={reload} />;
 
   const anyInvalid = (Object.keys(BODY_RANGES) as BodyKey[]).some((k) => invalid(k, draft[k]));
   const set = (patch: Partial<Draft>) => setDraft({ ...draft, ...patch });
@@ -76,13 +80,22 @@ export function ProfileRunner() {
   async function submit() {
     if (anyInvalid) return;
     const num = (t: string) => (t ? Number(t) : null);
-    await repo.saveProfile({
-      height_cm: num(draft!.height_cm),
-      weight_kg: num(draft!.weight_kg),
-      shoe_size_mm: num(draft!.shoe_size_mm),
-      interest_distance: draft!.interest_distance,
-    });
-    router.push("/onboarding/shoe");
+    setSaving(true);
+    setFailed(false);
+    try {
+      await repo.saveProfile({
+        height_cm: num(draft!.height_cm),
+        weight_kg: num(draft!.weight_kg),
+        shoe_size_mm: num(draft!.shoe_size_mm),
+        interest_distance: draft!.interest_distance,
+      });
+      // which optional fields were filled — never the values themselves
+      track("profile_runner_complete", { height: Boolean(draft!.height_cm), weight: Boolean(draft!.weight_kg), foot: Boolean(draft!.shoe_size_mm), interest_distance: draft!.interest_distance });
+      router.push("/onboarding/shoe");
+    } catch {
+      setFailed(true);
+      setSaving(false);
+    }
   }
 
   return (
@@ -120,10 +133,11 @@ export function ProfileRunner() {
         </fieldset>
 
         <div className="mt-auto pt-10" style={{ paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}>
-          <PrimaryButton disabled={anyInvalid} onClick={submit}>
+          {failed && <div className="mb-3"><SaveFailedBanner /></div>}
+          <PrimaryButton disabled={anyInvalid || saving} onClick={submit}>
             계속하기
           </PrimaryButton>
-          <Link href="/onboarding/shoe" className="mx-auto mt-3 flex h-11 w-fit items-center text-[16px] font-bold text-gm-g1 underline underline-offset-4">
+          <Link href="/onboarding/shoe" onClick={() => track("profile_runner_skip")} className="mx-auto mt-3 flex h-11 w-fit items-center text-[16px] font-bold text-gm-g1 underline underline-offset-4">
             지금은 건너뛰기
           </Link>
         </div>

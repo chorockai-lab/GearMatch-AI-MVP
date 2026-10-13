@@ -16,6 +16,8 @@ import { nextOnboardingPath } from "@/lib/onboarding/repository";
 import type { RunnerProfile } from "@/lib/onboarding/types";
 import { useOnboarding } from "@/lib/onboarding/useOnboarding";
 import { ChevronDownIcon } from "@/components/ui/icons";
+import { SaveFailedBanner } from "@/components/ui/Feedback";
+import { track } from "@/lib/events/track";
 import { ChoiceButton, FlowFrame, FlowLoading, FlowTopBar, PrimaryButton } from "./Flow";
 
 type Field = "experience" | "runs_per_week" | "typical_run_distance" | "weekly_distance";
@@ -51,7 +53,9 @@ function ChoiceGrid({ field, value, onPick }: { field: (typeof FIELDS)[number]; 
 
 export function ProfileHabits() {
   const router = useRouter();
-  const { state, repo } = useOnboarding();
+  const { state, repo, error, reload } = useOnboarding();
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [draft, setDraft] = useState<Pick<RunnerProfile, Field> | null>(null);
   const [open, setOpen] = useState<Field | null>("experience");
 
@@ -66,7 +70,7 @@ export function ProfileHabits() {
     setOpen(REQUIRED.find((f) => !p[f.key])?.key ?? null);
   }, [state, router]);
 
-  if (!state || !state.identity || !draft) return <FlowLoading />;
+  if (!state || !state.identity || !draft) return <FlowLoading error={error} onRetry={reload} />;
 
   const done = REQUIRED.filter((f) => draft[f.key]).length;
   const complete = done === REQUIRED.length;
@@ -79,8 +83,16 @@ export function ProfileHabits() {
 
   async function submit() {
     if (!complete) return;
-    await repo.saveProfile(draft!);
-    router.push("/onboarding/runner");
+    setSaving(true);
+    setFailed(false);
+    try {
+      await repo.saveProfile(draft!);
+      track("profile_habits_complete", { experience: draft!.experience, runs_per_week: draft!.runs_per_week, typical_run_distance: draft!.typical_run_distance });
+      router.push("/onboarding/runner");
+    } catch {
+      setFailed(true);
+      setSaving(false);
+    }
   }
 
   return (
@@ -125,7 +137,8 @@ export function ProfileHabits() {
           <p className="mt-0 mb-3 text-[14px] text-gm-g2">
             필수 정보 <b className="text-gm-tx">{done}/{REQUIRED.length}</b> 완료
           </p>
-          <PrimaryButton disabled={!complete} onClick={submit}>
+          {failed && <div className="mb-3"><SaveFailedBanner /></div>}
+          <PrimaryButton disabled={!complete || saving} onClick={submit}>
             다음
           </PrimaryButton>
         </div>

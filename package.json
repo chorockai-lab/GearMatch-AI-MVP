@@ -14,7 +14,10 @@
     "test:identity": "tsx scripts/test-identity.ts",
     "check:assets": "node scripts/check-assets.mjs",
     "lint": "eslint .",
-    "test:onboarding": "tsx scripts/test-onboarding.ts"
+    "test:onboarding": "tsx scripts/test-onboarding.ts",
+    "check:supabase": "node scripts/check-supabase.mjs",
+    "test:rls": "node scripts/test-rls.mjs",
+    "test:stats": "tsx scripts/test-stats.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
