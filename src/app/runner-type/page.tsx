@@ -1,5 +1,6 @@
-import { Placeholder } from "@/components/ui/Placeholder";
+import { RevealView } from "@/components/onboarding/RevealView";
 
-export default function Page() {
-  return <Placeholder title="RUNNER TYPE" step="STEP 2" note="내 러닝 동물 설명 · 실제 고른 답변 기반 WHY" />;
+// RUNNING "?" → 결과 다시 보기 (UI handoff index: no separate v2.0 Runner Type panel; linked to Identity Reveal — 확인 필요)
+export default function RunnerTypePage() {
+  return <RevealView mode="review" />;
 }

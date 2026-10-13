@@ -22,6 +22,7 @@ git diff
 npm run typecheck
 npm run lint
 npm run test:identity
+npm run test:onboarding
 npm run check:assets
 npm run build
 ```
@@ -50,7 +51,7 @@ Landing → Q1~Q5(이전으로 답 수정 포함) → Reveal → Profile 1 → P
 
 | 항목 | 결과 | 근거 |
 |---|---|---|
-| typecheck / lint / identity / assets / build | 통과·실패 | 명령 출력 |
+| typecheck / lint / identity / onboarding / assets / build | 통과·실패 | 명령 출력 |
 | 화면 흐름 390 / 320 | 확인·미확인 | 스크린샷 |
 | 민감정보 검사 | clean / 발견 | 명령 출력 |
 | CI | 성공·실패·대기 | PR 링크 |

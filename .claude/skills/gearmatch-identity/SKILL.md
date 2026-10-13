@@ -15,7 +15,10 @@ description: Use when touching Animal Identity v2.0 in this project — Runner T
 | `src/lib/identity/animals.ts` | 8종 ID·이름 |
 | `src/lib/identity/questions.ts` | 5문항×5선택지 원문, Primary/Secondary, 버전 |
 | `src/lib/identity/scoring.ts` | 점수·정규화(교차곱)·동점 4단계·보조 성향·mixed_signal |
-| `scripts/test-identity.ts` | 3,125 조합·페르소나 검증 (`npm run test:identity`) |
+| `src/lib/identity/reveal-copy.ts` | 헤드라인·성향 분석 원문 (명세 §5) |
+| `src/lib/identity/why.ts` | 실제 고른 답변 → WHY 1~3개 |
+| `src/lib/onboarding/repository.ts` | 결과 저장 필드(명세 §4.5)·재계산 |
+| `scripts/test-identity.ts` | 3,125 조합·페르소나·WHY 검증 (`npm run test:identity`) |
 
 ## 변경 절차
 

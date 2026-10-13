@@ -25,9 +25,10 @@ npm run dev             # 개발 서버 실행
 
 | 주소 | 내용 |
 |---|---|
-| http://localhost:3000 | 개발 미리보기 목록 |
-| http://localhost:3000/running | RUNNING Main (치타 · BASE) |
-| http://localhost:3000/running?state=run&animal=FOX | 상태(first · base · run · milestone)와 동물(HAM · CHE · HOR · GOA · FOX · WOL · OTT · CAT) 바꿔 보기 |
+| http://localhost:3000 | Landing — 실제 온보딩 흐름 시작 (테스트 → 결과 → 프로필 → 신발 → RUNNING) |
+| http://localhost:3000/running | 내 RUNNING Main (온보딩을 마친 경우. 아니면 남은 단계로 이동) |
+| http://localhost:3000/dev | 개발 미리보기 목록 (QA) |
+| http://localhost:3000/running?state=run&animal=FOX | DEMO 미리보기: 상태(first · base · run · milestone)와 동물(HAM · CHE · HOR · GOA · FOX · WOL · OTT · CAT) 바꿔 보기 |
 | http://localhost:3000/dev/states | 8종 × 상태 장면 한 번에 보기 |
 
 휴대폰 크기로 보려면 브라우저 개발자 도구(F12) → 기기 툴바에서 390 × 844를 선택하세요.
@@ -50,15 +51,20 @@ npm run build           # 배포용 빌드
 public/assets/        캐릭터 · 효과 PNG (gearmatch-running-assets v1.1 원본 그대로)
   char/  human/  fx/
 src/app/              화면(라우트)
-  page.tsx            개발 미리보기 목록 (STEP 2에서 Landing으로 교체)
+  page.tsx            Landing
+  test/[n]/           Runner Test Q1~Q5
+  reveal/             Identity Reveal  (runner-type/ = RUNNING "?" 결과 다시 보기)
+  onboarding/         habits(프로필 1) · runner(프로필 2) · shoe(지금 신는 러닝화)
   running/            RUNNING Main
-  dev/states/         8종 × 상태 QA 화면
-  items/ runs/new/ stats/ runner-type/ profile/   다음 STEP에서 구현할 자리(임시 화면)
+  dev/ dev/states/    개발 미리보기 · 8종 × 상태 QA 화면
+  items/ runs/new/ stats/ profile/ privacy/   다음 STEP에서 구현할 자리(임시 화면)
 src/components/
+  onboarding/         Landing 장면 · Runner Test · Reveal · Profile · Current Shoe · 공통 Flow 부품
   running/            RunnerScene(사람+동물 장면) · RunnerCard · RecentRuns · RunningMainView
   ui/                 하단 탭 · 헤더 · 아이콘 · 임시 화면
 src/lib/
-  identity/           동물 8종 · 5문항 · 판정(점수 · 정규화 · 동점 규칙)
+  identity/           동물 8종 · 5문항 · 판정(점수 · 정규화 · 동점 규칙) · 결과 문구 · WHY
+  onboarding/         온보딩 데이터 저장 계층 (STEP 2: 이 브라우저 임시 저장 → STEP 3: Supabase로 교체)
   running/            카드 상태 정책(잠정) · 페이스/표시 형식 · 마일스톤(확정 전, 꺼둠)
   assets/sprites.ts   PNG 기준점(bbox) 데이터
   demo/               DEMO 데이터 (실제 데이터와 구분, 화면에 DEMO DATA 표시)
@@ -68,9 +74,10 @@ scripts/              판정 테스트 · 에셋 검사
 docs/asset-source/    스프라이트 원본 데이터 · 내보내기 검사 기록
 ```
 
-## 3. 지금 상태 (STEP 1)
+## 3. 지금 상태 (STEP 2)
 
-- 화면에 나오는 기록 값은 모두 **DEMO**입니다. 저장 기능은 STEP 3(Supabase)에서 연결합니다.
+- 온보딩 결과(동물·답변·프로필·신발)는 **이 브라우저에만 임시 저장**됩니다(localStorage). 서버 저장이 아니므로 다른 브라우저·시크릿 모드·사이트 데이터 삭제 시 사라집니다. STEP 3에서 Supabase로 교체합니다.
+- 러닝 기록 저장은 STEP 3에서 연결합니다. `?state=` 미리보기 화면의 기록 값은 모두 **DEMO**입니다.
 - 카드 상태 규칙은 `src/lib/running/state-policy.ts` 한 곳에 모아 두었습니다(잠정 정책).
 - 캐릭터 배치 규칙(정수 ×3 확대 · 기준점 고정 · 동물 속도선이 사람을 가리지 않음)은 `src/components/running/RunnerScene.tsx`에 있습니다.
 
