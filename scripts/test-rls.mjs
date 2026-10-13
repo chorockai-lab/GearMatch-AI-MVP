@@ -76,6 +76,23 @@ check(denied(await A.from("events").delete().eq("id", evA.data?.id).select()), "
 check(Boolean((await A.from("runs").insert({ run_date: "2026-10-13", distance_km: 0, duration_sec: 300 })).error), "distance 0 rejected by DB");
 check(Boolean((await A.from("events").insert({ name: "Bad Name!" })).error), "invalid event name rejected by DB");
 
+// ITEMS (STEP 4): saved shoes are private; sample runners never readable; aggregate needs sign-in
+const anyProduct = (await A.from("products").select("id").limit(1)).data?.[0]?.id;
+if (anyProduct) {
+  const sv = await A.from("saved_products").insert({ product_id: anyProduct }).select().single();
+  check(!sv.error && sv.data?.user_id === a.id, `A saves a product ${sv.error?.message ?? ""}`);
+  check(denied(await B.from("saved_products").select("*").eq("user_id", a.id)), "B cannot read A's saved shoes");
+  check(denied(await B.from("saved_products").delete().eq("user_id", a.id).select()), "B cannot delete A's saved shoes");
+  check(Boolean((await B.from("saved_products").insert({ user_id: a.id, product_id: anyProduct })).error), "B cannot save a shoe as A");
+  await A.from("saved_products").delete().eq("product_id", anyProduct);
+} else {
+  console.log("SKIP  saved_products checks — no products imported yet");
+}
+for (const t of ["seed_runners", "seed_runner_shoes"]) check(Boolean((await A.from(t).select("*").limit(1)).error), `signed-in user cannot read ${t}`);
+check(Boolean((await anon.rpc("runners_like_you", { p_wide: false })).error), "signed-out cannot call runners_like_you()");
+const rly = await A.rpc("runners_like_you", { p_wide: false });
+check(!rly.error && ["ok", "insufficient", "profile_missing"].includes(rly.data?.status), `runners_like_you() for A → ${rly.data?.status ?? rly.error?.message}`);
+
 // cleanup A's own rows (events stay — append-only)
 await A.from("runs").delete().eq("id", runId);
 await A.from("runner_profiles").delete().eq("user_id", a.id);
