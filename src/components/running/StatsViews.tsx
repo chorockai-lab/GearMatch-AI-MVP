@@ -114,7 +114,7 @@ export function StatsCardView({ runs, today }: { runs: RunRecord[]; today: strin
                 <div>
                   <Label>GEARMATCH MILEAGE</Label>
                   <span className="mt-1 block text-[12px] text-gm-g1">
-                    {s.total.runs} RUNS{s.total.since ? ` · SINCE ${formatMonYear(s.total.since)}` : ""}
+                    {s.total.runs} {s.total.runs === 1 ? "RUN" : "RUNS"}{s.total.since ? ` · SINCE ${formatMonYear(s.total.since)}` : ""}
                   </span>
                 </div>
                 <p className="m-0 flex items-baseline gap-1.5">
@@ -128,7 +128,7 @@ export function StatsCardView({ runs, today }: { runs: RunRecord[]; today: strin
                   <Label>AVG PACE</Label>
                   <p className="m-0 mt-1 flex items-baseline gap-1">
                     <Num size="text-[30px]">{formatPace(s.recent.paceSec)}</Num>
-                    <Unit>/KM</Unit>
+                    {s.recent.paceSec != null && <Unit>/KM</Unit>}
                   </p>
                 </div>
                 <div className="min-w-0">
@@ -260,11 +260,11 @@ export function StatsDetailView({ runs, today }: { runs: RunRecord[]; today: str
           <div className="mt-3 grid grid-cols-2">
             <div>
               <Label>RECENT 4 WEEKS</Label>
-              <p className="m-0 mt-1 flex items-baseline gap-1"><Num size="text-[44px]">{formatPace(s.recent.paceSec)}</Num><Unit>/KM</Unit></p>
+              <p className="m-0 mt-1 flex items-baseline gap-1"><Num size="text-[44px]">{formatPace(s.recent.paceSec)}</Num>{s.recent.paceSec != null && <Unit>/KM</Unit>}</p>
             </div>
             <div>
               <Label>PREVIOUS 4 WEEKS</Label>
-              <p className="m-0 mt-1 flex items-baseline gap-1"><Num size="text-[44px]" className="text-gm-g1">{formatPace(s.previous.paceSec)}</Num><Unit>/KM</Unit></p>
+              <p className="m-0 mt-1 flex items-baseline gap-1"><Num size="text-[44px]" className="text-gm-g1">{formatPace(s.previous.paceSec)}</Num>{s.previous.paceSec != null && <Unit>/KM</Unit>}</p>
             </div>
           </div>
           {ps && <p className="mt-3 mb-0 text-[15px] font-bold">{ps}</p>}
