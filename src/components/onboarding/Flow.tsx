@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowIcon, BackIcon } from "@/components/ui/icons";
+import { LoadFailedBlock } from "@/components/ui/Feedback";
 
 /** Full-height mobile column (390-first, centred on wider screens). */
 export function FlowFrame({ children }: { children: React.ReactNode }) {
@@ -81,7 +82,18 @@ export function ChoiceButton({ selected, onClick, children, className = "" }: { 
   );
 }
 
-/** Black blank screen used while client-only state loads (avoids a flash of wrong content). */
-export function FlowLoading() {
-  return <FlowFrame>{null}</FlowFrame>;
+/**
+ * Black blank screen while client-only state loads (avoids a flash of wrong content).
+ * With `error`, shows the shared load-failed block (UI handoff load-failed) and a retry.
+ */
+export function FlowLoading({ error, onRetry }: { error?: unknown; onRetry?: () => void } = {}) {
+  return (
+    <FlowFrame>
+      {error ? (
+        <div className="px-6 pt-20">
+          <LoadFailedBlock title="정보를 불러오지 못했어요." onRetry={onRetry ?? (() => window.location.reload())} />
+        </div>
+      ) : null}
+    </FlowFrame>
+  );
 }

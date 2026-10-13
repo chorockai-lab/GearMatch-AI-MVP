@@ -1,9 +1,9 @@
 // Onboarding data access. Screens talk ONLY to `OnboardingRepository`.
 //
-// STEP 2: `localOnboardingRepository` keeps everything in this browser's localStorage.
+// `localOnboardingRepository` keeps everything in this browser's localStorage.
 //   ⚠ This is TEMPORARY client storage — not a server save. It is lost on another browser,
 //   in private mode, or when site data is cleared. Never describe it as saved to an account.
-// STEP 3: add a Supabase implementation of the same interface and swap `onboardingRepository`.
+// The Supabase implementation lives in server-repository.ts; store.ts picks one by STORAGE_MODE.
 import { evaluateIdentity, type Answers } from "@/lib/identity/scoring";
 import type { AnswerCode, QuestionId } from "@/lib/identity/questions";
 import { EMPTY_PROFILE, EMPTY_STATE, type IdentityRecord, type OnboardingState, type RunnerProfile } from "./types";
@@ -19,76 +19,85 @@ export interface OnboardingRepository {
   reset(): Promise<void>;
 }
 
-const KEY = "gearmatch.onboarding.v1";
-// Used only when localStorage is unavailable (private mode / blocked / quota) — not as a cache.
-let memoryFallback: OnboardingState = EMPTY_STATE;
-let storageWorks = true;
+/** A localStorage-backed repository under its own key (keys never overlap, so data sets never mix). */
+function createLocalOnboardingRepository(KEY: string): OnboardingRepository {
+  // Used only when localStorage is unavailable (private mode / blocked / quota) — not as a cache.
+  let memoryFallback: OnboardingState = EMPTY_STATE;
+  let storageWorks = true;
 
-function read(): OnboardingState {
-  if (!storageWorks) return memoryFallback;
-  let raw: string | null;
-  try {
-    raw = window.localStorage.getItem(KEY);
-  } catch {
-    storageWorks = false;
-    return memoryFallback;
-  }
-  if (!raw) return EMPTY_STATE;
-  try {
-    const v = JSON.parse(raw) as Partial<OnboardingState>;
-    return {
-      answers: v.answers ?? {},
-      identity: v.identity ?? null,
-      profile: { ...EMPTY_PROFILE, ...(v.profile ?? {}) },
-      completed_at: v.completed_at ?? null,
-    };
-  } catch {
-    return EMPTY_STATE; // corrupted value → start over
-  }
-}
-
-function write(s: OnboardingState): OnboardingState {
-  memoryFallback = s;
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(s));
-  } catch {
-    storageWorks = false; // blocked (private mode / quota) → keeps working for this page session only
-  }
-  return s;
-}
-
-export const localOnboardingRepository: OnboardingRepository = {
-  kind: "local-temporary",
-  async load() {
-    return read();
-  },
-  async setAnswer(q, code) {
-    const s = read();
-    if (s.answers[q] === code) return s;
-    return write({ ...s, answers: { ...s.answers, [q]: code }, identity: null });
-  },
-  async saveIdentity(identity) {
-    return write({ ...read(), identity });
-  },
-  async saveProfile(patch) {
-    const s = read();
-    return write({ ...s, profile: { ...s.profile, ...patch } });
-  },
-  async complete() {
-    return write({ ...read(), completed_at: new Date().toISOString() });
-  },
-  async reset() {
-    memoryFallback = EMPTY_STATE;
+  function read(): OnboardingState {
+    if (!storageWorks) return memoryFallback;
+    let raw: string | null;
     try {
-      window.localStorage.removeItem(KEY);
+      raw = window.localStorage.getItem(KEY);
     } catch {
-      /* ignore */
+      storageWorks = false;
+      return memoryFallback;
     }
-  },
-};
+    if (!raw) return EMPTY_STATE;
+    try {
+      const v = JSON.parse(raw) as Partial<OnboardingState>;
+      return {
+        answers: v.answers ?? {},
+        identity: v.identity ?? null,
+        profile: { ...EMPTY_PROFILE, ...(v.profile ?? {}) },
+        completed_at: v.completed_at ?? null,
+      };
+    } catch {
+      return EMPTY_STATE; // corrupted value → start over
+    }
+  }
 
-/** The repository the app uses. STEP 3 swaps this for the Supabase implementation. */
-export const onboardingRepository: OnboardingRepository = localOnboardingRepository;
+  function write(s: OnboardingState): OnboardingState {
+    memoryFallback = s;
+    try {
+      window.localStorage.setItem(KEY, JSON.stringify(s));
+    } catch {
+      storageWorks = false; // blocked (private mode / quota) → keeps working for this page session only
+    }
+    return s;
+  }
+
+  const repo: OnboardingRepository = {
+    kind: "local-temporary",
+    async load() {
+      return read();
+    },
+    async setAnswer(q, code) {
+      const s = read();
+      if (s.answers[q] === code) return s;
+      return write({ ...s, answers: { ...s.answers, [q]: code }, identity: null });
+    },
+    async saveIdentity(identity) {
+      return write({ ...read(), identity });
+    },
+    async saveProfile(patch) {
+      const s = read();
+      return write({ ...s, profile: { ...s.profile, ...patch } });
+    },
+    async complete() {
+      return write({ ...read(), completed_at: new Date().toISOString() });
+    },
+    async reset() {
+      memoryFallback = EMPTY_STATE;
+      try {
+        window.localStorage.removeItem(KEY);
+      } catch {
+        /* ignore */
+      }
+    },
+  };
+  return repo;
+}
+
+/** DEMO / local mode: the whole onboarding state, temporary, this browser only. */
+export const localOnboardingRepository = createLocalOnboardingRepository("gearmatch.onboarding.v1");
+
+/**
+ * Server mode: only the in-progress test answers are kept locally (results/profile are server rows).
+ * Separate key, so DEMO answers from `gearmatch.onboarding.v1` are never carried into the real DB.
+ */
+export const serverDraftRepository = createLocalOnboardingRepository("gearmatch.onboarding.server-draft.v1");
 
 // ── pure helpers ────────────────────────────────────────────────────────────
 

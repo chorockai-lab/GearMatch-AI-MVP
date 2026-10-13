@@ -1,10 +1,12 @@
 // Landing — UI handoff 01_LANDING/landing.png
 import { LandingScene } from "@/components/onboarding/LandingScene";
 import { FlowFrame, PrimaryLink } from "@/components/onboarding/Flow";
+import { TrackView } from "@/components/ui/TrackView";
 
 export default function Landing() {
   return (
     <FlowFrame>
+      <TrackView name="landing_view" />
       <header className="flex h-14 items-center justify-between px-6">
         <span className="font-[family-name:var(--font-bc)] text-[17px] font-extrabold tracking-[0.22em]">GEARMATCH</span>
         <span className="gm-label">RUNNING ANIMAL</span>

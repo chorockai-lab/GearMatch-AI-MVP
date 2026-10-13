@@ -2,7 +2,8 @@
 // Identity Reveal — UI handoff 03_IDENTITY_REVEAL/reveal-{id}(-full).png (AI8 template, same for all 8 animals).
 // Built from React elements (no poster image). WHY quotes only the answers the user actually picked (lib/identity/why.ts).
 // Scores / percentages / secondary type are never shown (spec §4.2, §4.4).
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useTrackOnce } from "@/lib/events/useTrackOnce";
 import { useRouter } from "next/navigation";
 import { ANIMALS, type AnimalId } from "@/lib/identity/animals";
 import { REVEAL_COPY } from "@/lib/identity/reveal-copy";
@@ -49,7 +50,8 @@ function RevealScene({ animal }: { animal: AnimalId }) {
 
 export function RevealView({ mode }: { mode: "onboarding" | "review" }) {
   const router = useRouter();
-  const { state, setState, repo } = useOnboarding();
+  const { state, setState, repo, error, reload } = useOnboarding();
+  const [saveError, setSaveError] = useState<unknown>(null);
   const answers = state ? completeAnswers(state) : null;
 
   useEffect(() => {
@@ -60,11 +62,13 @@ export function RevealView({ mode }: { mode: "onboarding" | "review" }) {
     }
     // re-evaluate whenever answers and the stored result disagree (answer edited, refresh, older data)
     if (!state.identity || state.identity.test_answers_v2 !== answersCode(answers)) {
-      repo.saveIdentity(identityFromAnswers(answers)).then(setState);
+      repo.saveIdentity(identityFromAnswers(answers)).then(setState, setSaveError);
     }
   }, [state, answers, repo, router, setState]);
 
-  if (!state || !answers || !state.identity) return <FlowLoading />;
+  useTrackOnce("reveal_view", { animal: state?.identity?.animal_type_v2 ?? null, mode }, Boolean(state?.identity));
+
+  if (!state || !answers || !state.identity) return <FlowLoading error={error ?? saveError} onRetry={reload} />;
 
   const animal = state.identity.animal_type_v2;
   const a = ANIMALS[animal];

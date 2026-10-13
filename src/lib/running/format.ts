@@ -39,3 +39,42 @@ export function localDate(d: Date = new Date()): string {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
+
+// ── STEP 3 display helpers (UI handoff 06/07) ───────────────────────────────
+
+const DOW_EN = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
+const MONTH_EN = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+
+/** weekday of a local calendar date (0 = Sunday), computed without time zones */
+const dow = (isoDate: string) => {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+};
+
+/** "2026-10-08" → "THU" */
+export const weekdayEn = (isoDate: string) => DOW_EN[dow(isoDate)];
+
+/** "2026-10-08" → "2026. 10. 08 (목)" */
+export function formatDateKo(isoDate: string): string {
+  const [y, m, d] = isoDate.split("-");
+  return `${y}. ${m}. ${d} (${DOW_KO[dow(isoDate)]})`;
+}
+
+/** "2026-10-08" → "OCT 08" */
+export const formatMonDay = (isoDate: string) => {
+  const { mon, day } = splitDate(isoDate);
+  return `${mon} ${day}`;
+};
+
+/** "2026-10-08" → "OCTOBER 2026" */
+export const formatMonthHeading = (isoDate: string) => `${MONTH_EN[Number(isoDate.slice(5, 7)) - 1]} ${isoDate.slice(0, 4)}`;
+
+/** "2026-09-14" → "SEP 2026" */
+export const formatMonYear = (isoDate: string) => `${splitDate(isoDate).mon} ${isoDate.slice(0, 4)}`;
+
+/** 3692 → { h: 1, m: 1, s: 32 } */
+export const splitDuration = (sec: number) => ({ h: Math.floor(sec / 3600), m: Math.floor((sec % 3600) / 60), s: sec % 60 });
+
+/** km to one decimal, never "-0.0" */
+export const formatKmSigned = (km: number) => `${km > 0 ? "+" : km < 0 ? "−" : ""}${Math.abs(km).toFixed(1)}`;

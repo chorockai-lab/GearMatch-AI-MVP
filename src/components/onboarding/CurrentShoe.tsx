@@ -11,6 +11,8 @@ import type { ShoeStatus } from "@/lib/onboarding/types";
 import { useOnboarding } from "@/lib/onboarding/useOnboarding";
 import { ArrowIcon, CheckIcon, SearchIcon } from "@/components/ui/icons";
 import { ChoiceButton, FlowFrame, FlowLoading, FlowTopBar, PrimaryButton } from "./Flow";
+import { SaveFailedBanner } from "@/components/ui/Feedback";
+import { track } from "@/lib/events/track";
 
 type Pick = { status: ShoeStatus; label: string | null; source: "popular" | "custom" | "unknown" | "none" } | null;
 
@@ -18,7 +20,9 @@ const CUSTOM_MAX = 40;
 
 export function CurrentShoe() {
   const router = useRouter();
-  const { state, repo } = useOnboarding();
+  const { state, repo, error, reload } = useOnboarding();
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [pick, setPick] = useState<Pick>(null);
   const [query, setQuery] = useState("");
   const [customOpen, setCustomOpen] = useState(false);
@@ -50,7 +54,7 @@ export function CurrentShoe() {
     return POPULAR_SHOES.filter((s) => `${s.brand} ${s.model} ${s.label}`.toLowerCase().includes(q));
   }, [query]);
 
-  if (!state || !ready) return <FlowLoading />;
+  if (!state || !ready) return <FlowLoading error={error} onRetry={reload} />;
 
   const selectedText =
     pick?.status === "known" ? pick.label : pick?.status === "unknown" ? SHOE_UNKNOWN_LABEL : pick?.status === "none" ? "아직 없음" : null;
@@ -70,9 +74,17 @@ export function CurrentShoe() {
 
   async function submit() {
     if (!pick) return;
-    await repo.saveProfile({ current_shoe_status: pick.status, current_shoe_label: pick.status === "known" ? pick.label : null });
-    await repo.complete();
-    router.push("/running");
+    setSaving(true);
+    setFailed(false);
+    try {
+      await repo.saveProfile({ current_shoe_status: pick.status, current_shoe_label: pick.status === "known" ? pick.label : null });
+      await repo.complete();
+      track("onboarding_complete", { shoe_status: pick.status, shoe_source: pick.source });
+      router.push("/running");
+    } catch {
+      setFailed(true);
+      setSaving(false);
+    }
   }
 
   return (
@@ -185,7 +197,8 @@ export function CurrentShoe() {
           <span className="flex-none text-[14px] tracking-[0.1em] text-gm-g2">선택한 신발</span>
           <span className={`truncate text-[16px] ${selectedText ? "font-semibold text-gm-tx" : "font-bold text-gm-g1"}`}>{selectedText ?? "선택 전"}</span>
         </p>
-        <PrimaryButton disabled={!pick} onClick={submit}>
+        {failed && <div className="mb-3"><SaveFailedBanner /></div>}
+        <PrimaryButton disabled={!pick || saving} onClick={submit}>
           내 Runner 완성하기
         </PrimaryButton>
       </div>

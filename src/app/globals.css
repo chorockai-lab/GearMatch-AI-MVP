@@ -11,6 +11,13 @@
   --color-gm-line2: #3a3a37;
   --color-gm-line3: #55554f;
   --color-gm-paper: #efece7;
+  /* STEP 3 — from UI handoff 06/07 (add-run-error/failed, delete-confirm, stats-card) */
+  --color-gm-field: #141413;
+  --color-gm-sheet: #151514;
+  --color-gm-err: #ff6b57;
+  --color-gm-err-tx: #ff8a6e;
+  --color-gm-err-bg: #2a1410;
+  --color-gm-err-line: #5a2a20;
 
   --font-bc: var(--font-barlow-condensed), "Arial Narrow", sans-serif;
   --font-bl: var(--font-barlow), "Helvetica Neue", Arial, sans-serif;
