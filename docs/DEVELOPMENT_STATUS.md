@@ -9,7 +9,7 @@
 | 1 | Foundation — Next.js · RUNNING Main · 픽셀 에셋 · 판정 로직 | 완료 (main) |
 | 2 | Onboarding — Landing → Test → Reveal → Profile 1/2 → Shoe → RUNNING | 완료 (main, PR #6) |
 | 3 | Running & Stats — Supabase · Run CRUD · History · Stats · 이벤트 | 완료 (main, PR #7) |
-| 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 구현 + 로컬 DEMO·PGlite 검증 완료 · **실제 Supabase 적용·검증 대기** |
+| 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 구현 + **실제 Supabase 검증 완료** → PR #8 · CI 후 main 반영 |
 | 5 | QA & Deployment — 전체 QA · Vercel 내부 배포 | 미착수 |
 
 ## STEP 4에서 구현·검증한 것
@@ -24,14 +24,24 @@
 | Product Detail | `/items/[id]` | 비율·N명 중 X명·기록 합계(DEMO DATA 표시)·공식 링크, 저장 후 같은 화면 유지 |
 | Saved | `/items/saved` | 목록 → 상세 → 뒤로가기 시 Saved 복귀, 저장 취소, 빈 상태 |
 | DEMO 끔 | 기본 빌드 | 0명·목록 없음·DEMO 표시 없음 (가짜 수치 없음) |
-| 이벤트 | `shoe_detail_view` · `shoe_save` · `shoe_unsave` 추가(총 22종) | 로컬 모드는 전송 안 함 → 서버 모드에서 확인 예정 |
+| 이벤트 | `shoe_detail_view` · `shoe_save` · `shoe_unsave` 추가(총 22종) | 서버 모드 QA 세션에서 기록 확인, 저장 실패 시 `shoe_save` 미기록 |
 | 320px | ITEMS 화면 5개 | 가로 넘침 0건 |
 
-### STEP 4 남은 확인 (사용자 SQL 적용 후)
+### STEP 4 실제 Supabase 검증 (2026-10-13, 서버 모드 배포용 빌드 · QA 세션)
 
-- `20261014000000_items.sql`, `supabase/seed/items.generated.sql`(상품 63개) SQL Editor 적용
-- `check:supabase` · `test:rls`(저장 목록 RLS 포함) · 서버 모드 브라우저(상품 상세·저장·이벤트) 확인
-- 실제 샘플 러너 데이터가 없으므로 서버 모드 ITEMS는 "비슷한 러너 부족" 상태가 정상
+| 항목 | 결과 |
+|---|---|
+| SQL 적용 | 사용자가 SQL Editor로 `STEP4_Items_Database_Setup`, `STEP4_Product_Data_Seed_v0.3` 실행 (재실행 안 함) |
+| `check:supabase` | products 13열 · saved_products 3열 · `runners_like_you()` 실행 · seed 테이블 조회 차단 · 앱에 보이는 상품 50개 |
+| 전체 63개 · 샘플 러너 0명 | RLS로 앱에서 셀 수 없음 → 대시보드 확인 SQL(`docs/SUPABASE.md`)로 확인. 로컬 Postgres에 같은 SQL 적용 시 63/50/0/0 |
+| `test:rls` | 전부 통과 — A/B 저장 목록 격리(조회·삭제·사칭 차단), 샘플 러너 조회 차단, 로그아웃 집계 호출 차단 |
+| ITEMS 화면 | 프로필 173/70/270 → A(0명) → 사용자 선택 확대 → C(0명), 가짜 수치·DEMO 표시 없음 |
+| 상품 상세 | 대체 실루엣 · "아직 비교할 비슷한 러너가 충분하지 않아요" · 태그 · 공식 링크(숫자 없음) |
+| 저장 / 취소 | 저장 → 새로고침 후에도 "저장됨"(서버 재조회) → Saved 목록 → 상세 → 뒤로가기 Saved → 저장 취소 → 빈 상태, DB 0행 |
+| 저장 실패 | 요청 실패 시 "저장하지 못했어요" · 저장 상태 원복 · 이벤트 미기록 → 재시도 성공 |
+| 이벤트 | items_view(base/wide) · shoe_detail_view · shoe_save · shoe_unsave 기록, 전부 `qa: true` |
+
+실제 샘플 러너가 들어오기 전까지 서버 모드 ITEMS는 "부족" 상태가 정상이며, 목록이 없으므로 상품 상세는 Saved로만 들어갈 수 있습니다(현재 Saved도 비어 있으면 진입 경로 없음).
 
 ## STEP 3에서 구현·검증한 것
 
@@ -50,7 +60,12 @@
 | 이벤트 19종 | `src/lib/events/track.ts` | 서버에 기록 확인(아래), 키·체중·발 사이즈·신발명·자유 입력 0건 |
 | 분석 쿼리 | `docs/ANALYTICS_QUERIES.md` | PGlite(실제 Postgres 엔진)로 실행·수치 검증(`npm run verify:sql`). 실제 이용 수치는 아직 없음 |
 
-### 확정 정책 (2026-10-13 사용자 확정)
+### STEP 4 확정 정책 (2026-10-13)
+
+- 신체 정보 부족 시 인원수 미표시 · 내 정보 수정 = 프로필 2단계 · 상품 설명은 검증된 정보(태그·공식 링크)만 · 미승인 이미지는 대체 실루엣
+- 최소 유사 러너 5명 · 기본 ±5cm/±5kg/±10mm · 확대 ±10cm/±10kg/±20mm(사용자 선택 시) · 같은 보통 거리 구간 · 부족 시 가짜 통계 금지
+
+### STEP 3 확정 정책 (2026-10-13 사용자 확정)
 
 - 통계: 최근 4주 = 오늘 포함 28일 · 평균 페이스 = 총 시간 ÷ 총 거리 · Most Used Shoe = 누적 거리(신발 없는 기록 제외) · 기록 부족 시 임의 통계 없음
 - 입력: 날짜 = 휴대폰 기본 달력 · 러닝화 변경 = 같은 화면 안 선택 · 새 화면 없음
@@ -98,9 +113,6 @@ QA 세션(`?qa=1`)·`test:rls`·`check:supabase`로 생긴 사용자/이벤트�
 
 ## DECISION NEEDED
 
-- ITEMS 정보 부족 상태: 시안(C-profile-missing)은 인원수를 보여주지만, 확정 규칙(4개 조건)을 적용할 수 없어 숫자를 계산하지 않고 "내 정보 추가하기"만 표시 — 확인 필요
-- ITEMS 상세 "ABOUT THIS SHOE" 설명 문구: Product DB에 설명이 없어 태그·공식 링크만 표시
-- "내 정보 수정"은 MY PROFILE 화면이 없어 프로필 2단계(키·체중·발 사이즈)로 연결하고 ITEMS로 복귀. 보통 거리 수정은 아직 불가
 
 - 시안의 큰 영문 제목 글꼴(Noto 계열로 보임) vs 확정 코드 Barlow Condensed — 코드 기준 유지 중
 - 시안 없는 최소 구현: Current Shoe "직접 입력", 개인정보 안내(`/privacy`), RUNNING "?" → 결과 다시 보기
