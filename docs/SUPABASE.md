@@ -20,7 +20,9 @@ NEXT_PUBLIC_DATA_MODE=real npm run build
 
 | 파일 | 적용 방법 | 적용일 | 확인 |
 |---|---|---|---|
-| `supabase/migrations/20261013000000_init.sql` | 대시보드 **SQL Editor에 붙여넣어 수동 실행** | 2026-10-13 | `npm run check:supabase`가 4개 테이블·37개 열·`updated_at` 트리거를 확인. `npm run test:rls` 통과 |
+| `supabase/migrations/20261013000000_init.sql` | 대시보드 **SQL Editor에 붙여넣어 수동 실행** (저장 쿼리명 `STEP3_Core_Database_Setup`) | 2026-10-13 | `npm run check:supabase`가 4개 테이블·37개 열·`updated_at` 트리거를 확인. `npm run test:rls` 통과 |
+| `supabase/migrations/20261014000000_items.sql` | SQL Editor 수동 실행 (`STEP4_Items_Database_Setup`) | 2026-10-13 | `check:supabase`: products 13열·saved_products 3열·`runners_like_you()` 실행·샘플 러너 테이블 조회 차단(42501). `test:rls` 통과 |
+| `supabase/seed/items.generated.sql` (Git 제외) | SQL Editor — 상품 63개 upsert (`STEP4_Product_Data_Seed_v0.3`) | 2026-10-13 | 앱에 보이는 상품 50개(`check:supabase` INFO). 전체 63개·샘플 러너 0명은 아래 확인 SQL로 대시보드에서 확인 |
 
 **주의: 위 SQL을 다시 실행하지 않습니다.** (다시 실행해도 `if not exists` / `drop policy if exists`로 같은 상태가 되지만, 운영 DB에서 정책을 지웠다 다시 만드는 순간이 생깁니다.)
 
@@ -31,12 +33,27 @@ NEXT_PUBLIC_DATA_MODE=real npm run build
 npx supabase login
 npx supabase link --project-ref <project-ref>
 npx supabase migration repair --status applied 20261013000000
+npx supabase migration repair --status applied 20261014000000
 npx supabase migration list
 ```
 
 `migration list`에서 Local과 Remote 양쪽에 `20261013000000`이 보이면 정상입니다. 그 뒤 새 변경은
 `supabase/migrations/<타임스탬프>_<이름>.sql` 새 파일로 만들고 `npx supabase db push`로 적용합니다(기존 파일 수정 금지).
 CLI를 쓰지 않고 계속 SQL Editor로 적용한다면, 이 표에 파일·날짜를 한 줄씩 추가합니다.
+
+## 대시보드 확인 SQL (읽기 전용)
+
+비활성 상품과 샘플 러너는 RLS로 앱에서 보이지 않으므로, 전체 개수는 SQL Editor에서 확인합니다.
+
+```sql
+select 'products total' as item, count(*)::text as value from public.products
+union all select 'products active',  count(*)::text from public.products where active
+union all select 'seed_runners',     count(*)::text from public.seed_runners
+union all select 'seed_runner_shoes', count(*)::text from public.seed_runner_shoes
+union all select 'saved_products',   count(*)::text from public.saved_products
+union all select 'runs',             count(*)::text from public.runs
+union all select 'events',           count(*)::text from public.events;
+```
 
 ## 검증 명령
 

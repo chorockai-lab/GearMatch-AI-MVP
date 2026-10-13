@@ -47,12 +47,25 @@ const SCHEMA = {
     "user_id, experience, runs_per_week, typical_run_distance, weekly_distance, height_cm, weight_kg, shoe_size_mm, interest_distance, current_shoe_label, current_shoe_status, onboarding_completed_at, updated_at",
   runs: "id, user_id, run_date, distance_km, duration_sec, shoe_label, created_at, updated_at",
   events: "id, user_id, name, props, path, client_at, created_at",
+  // STEP 4 (supabase/migrations/20261014000000_items.sql)
+  products: "id, brand, brand_ko, model_name, display_name, primary_use, tags, official_url, image_url, image_approved, active, data_source, updated_at",
+  saved_products: "user_id, product_id, saved_at",
 };
 for (const [t, cols] of Object.entries(SCHEMA)) {
   // GET, not HEAD: a HEAD request returns 204 even for tables that do not exist.
   const { error } = await sb.from(t).select(cols).limit(1);
   report(!error, `table ${t} (${cols.split(",").length} columns)${error ? " → " + (error.code ?? "") + " " + error.message : ""}`);
 }
+
+// ITEMS: aggregate function callable; sample runner tables closed to clients
+const rly = await sb.rpc("runners_like_you", { p_wide: false });
+report(!rly.error && typeof rly.data?.status === "string", `runners_like_you() → ${rly.error ? rly.error.message : rly.data.status}`);
+for (const t of ["seed_runners", "seed_runner_shoes"]) {
+  const r = await sb.from(t).select("*").limit(1);
+  report(Boolean(r.error), `${t} not readable by clients (${r.error?.code ?? "readable!"})`);
+}
+const pc = await sb.from("products").select("id", { count: "exact" }).limit(1);
+console.log(`INFO  products visible to the app: ${pc.count ?? 0}`);
 
 // updated_at trigger works (own row, then cleaned up)
 const ins = await sb.from("runs").insert({ run_date: "2026-01-01", distance_km: 1, duration_sec: 300 }).select("id, updated_at").single();

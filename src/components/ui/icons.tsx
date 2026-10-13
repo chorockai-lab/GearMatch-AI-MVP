@@ -89,3 +89,9 @@ export const PixelQuestion = () => (
     <rect x="2" y="7" width="1" height="1" />
   </svg>
 );
+
+export const BookmarkIcon = ({ size = 18, filled = false }: { size?: number; filled?: boolean }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinejoin="miter">
+    <path d="M6 3.5h12v17l-6-4.5-6 4.5z" />
+  </svg>
+);

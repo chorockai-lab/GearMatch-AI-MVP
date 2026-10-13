@@ -1,11 +1,7 @@
-import { Placeholder } from "@/components/ui/Placeholder";
-import { TrackView } from "@/components/ui/TrackView";
+import { ItemsScreen } from "@/components/items/ItemsScreens";
 
-export default function Page() {
-  return (
-    <>
-      <TrackView name="items_view" />
-      <Placeholder title="ITEMS" step="STEP 4" note="Runners Like You · 유사 러너 집계 · Product Detail · Saved" tab="items" />
-    </>
-  );
+// ITEMS — Runners Like You. ?range=wide only after the user chose "조건이 가까운 러너까지 보기".
+export default async function ItemsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const sp = await searchParams;
+  return <ItemsScreen key={String(sp.range)} range={sp.range === "wide" ? "wide" : "base"} />;
 }

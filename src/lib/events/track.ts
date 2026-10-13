@@ -25,7 +25,10 @@ export const EVENT_NAMES = [
   "history_view",
   "stats_view",
   "stats_detail_view",
-  "items_view",
+  "items_view", // props: { status, range, runners }
+  "shoe_detail_view", // props: { product_id, range, from }
+  "shoe_save", // props: { product_id, from }
+  "shoe_unsave", // props: { product_id, from }
 ] as const;
 export type EventName = (typeof EVENT_NAMES)[number];
 

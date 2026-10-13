@@ -59,6 +59,11 @@ export function ProfileRunner() {
   const { state, repo, error, reload } = useOnboarding();
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
+  // ITEMS "내 정보 수정 / 추가하기" opens this screen with ?return=/items — go back there instead of continuing onboarding
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+  useEffect(() => {
+    setReturnTo(new URLSearchParams(window.location.search).get("return") === "/items" ? "/items" : null);
+  }, []);
   const [draft, setDraft] = useState<Draft | null>(null);
 
   useEffect(() => {
@@ -91,7 +96,7 @@ export function ProfileRunner() {
       });
       // which optional fields were filled — never the values themselves
       track("profile_runner_complete", { height: Boolean(draft!.height_cm), weight: Boolean(draft!.weight_kg), foot: Boolean(draft!.shoe_size_mm), interest_distance: draft!.interest_distance });
-      router.push("/onboarding/shoe");
+      router.push(returnTo ?? "/onboarding/shoe");
     } catch {
       setFailed(true);
       setSaving(false);
@@ -100,7 +105,7 @@ export function ProfileRunner() {
 
   return (
     <FlowFrame>
-      <FlowTopBar label="PROFILE" step={2} total={3} backHref="/onboarding/habits" />
+      <FlowTopBar label="PROFILE" step={2} total={3} backHref={returnTo ?? "/onboarding/habits"} />
       <main className="flex flex-1 flex-col px-6 pt-[30px]">
         <h1 className="m-0 text-[30px] leading-[38px] font-extrabold tracking-[-0.02em]">나와 비슷한 러너 찾기</h1>
         <p className="mt-2 mb-0 text-[15px] leading-[23px] text-gm-g1 [word-break:keep-all]">비슷한 조건의 러너들이 신는 러닝화를 찾는 데만 쓰여요.</p>
@@ -137,7 +142,7 @@ export function ProfileRunner() {
           <PrimaryButton disabled={anyInvalid || saving} onClick={submit}>
             계속하기
           </PrimaryButton>
-          <Link href="/onboarding/shoe" onClick={() => track("profile_runner_skip")} className="mx-auto mt-3 flex h-11 w-fit items-center text-[16px] font-bold text-gm-g1 underline underline-offset-4">
+          <Link href={returnTo ?? "/onboarding/shoe"} onClick={() => !returnTo && track("profile_runner_skip")} className="mx-auto mt-3 flex h-11 w-fit items-center text-[16px] font-bold text-gm-g1 underline underline-offset-4">
             지금은 건너뛰기
           </Link>
         </div>
