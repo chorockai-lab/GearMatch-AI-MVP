@@ -7,7 +7,7 @@
 | STEP | 내용 | 상태 |
 |---|---|---|
 | 1 | Foundation — Next.js · RUNNING Main · 픽셀 에셋 · 판정 로직 | 검증 완료 |
-| 2 | Onboarding — Landing → Test → Reveal → Profile 1/2 → Shoe → RUNNING | 구현·로컬 검증 완료 (PR·CI 확인 대기) |
+| 2 | Onboarding — Landing → Test → Reveal → Profile 1/2 → Shoe → RUNNING | 구현·로컬 검증 완료 → PR + CI 통과 후 main 반영 |
 | 3 | Running & Stats — Supabase · Run CRUD · History · Stats | 미착수 |
 | 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 미착수 (러닝화 Excel 필요) |
 | 5 | QA & Deployment — 전체 QA · Vercel 내부 배포 | 미착수 |
@@ -43,13 +43,23 @@
 | 320×640 | Landing·Q2·Profile 1/2·Shoe·RUNNING·Reveal(MOUNTAIN GOAT) 가로 넘침 0건 |
 | 새로고침·빈 상태 | 새로고침 후 상태 유지. 저장 없음 상태로 `/running`·`/onboarding/shoe`·`/test/4` → `/test/1` |
 | 배포용 빌드(`next start`) | OTT 페르소나 Reveal·보호 이동·"모델명 모름" RUNNING 표시, 콘솔 오류 0건 |
+| 추가 시험 (배포용 빌드, 2026-10-13 2차) | WOL 페르소나 CADEB → WOL, WHY 3개 = 실제 고른 Q1·Q3·Q5 |
+| 브라우저 뒤로가기·앞으로가기 | Q3 → 뒤로 Q2(A 선택 유지) → 뒤로 Q1(C 유지) → 앞으로 Q3 |
+| 테스트 도중 새로고침 | Q3에서 새로고침 → Q1·Q2 답 유지, 이어서 진행 |
+| 프로필 2단계 건너뛰기 | "지금은 건너뛰기" → 신발 화면, 2단계 값 저장 안 됨(전부 비어 있음) |
+| 신발 모델 모름 / 없음 | 선택 전 CTA 비활성 → "모델명 모름" 선택 → RUNNING "모델명 모름". 뒤로가기로 돌아오면 이전 선택 복원, "아직 없음"으로 바꾸면 RUNNING "—" |
+
+추가 시험 방식 참고: 앱 창이 가려져 있으면 브라우저 화면이 그려지지 않아 클릭 좌표가 어긋났습니다. 그래서 2차 시험의 버튼 조작은 화면 요소를 코드로 직접 누르는 방식(`element.click()`)으로 했습니다. 1차 시험(햄스터·고양이 흐름)은 실제 클릭으로 진행했습니다.
 
 ## 알려진 문제 · 한계
 
 - WHY는 근거가 부족하면 채우지 않음: 3,125 조합 중 432개(13.8%)는 WHY 1개만 표시 (명세 "억지로 채우지 않는다"에 따름).
 - 보조 성향(secondary)은 저장만 하고 화면에 표시하지 않음 — 시안에 표시 영역이 없음.
 - 개발 서버에서 파일 이동 직후 webpack 청크 오류 1건 관찰 → 배포용 빌드에서는 재현 안 됨(개발 환경 전용으로 판단).
-- `npm audit`: Next.js 15 내부 `postcss` 권고 2건(빌드 도구 경로). Next 16 메이저 업그레이드 필요 → 보류.
+- `npm audit` (2026-10-13) — 모두 빌드·개발 도구 경로. 사용자 브라우저로 가는 코드에는 해당하지 않음
+  - `postcss@8.4.31` (Next.js 15.5.27 내부 고정, high): GHSA-qx2v-qp2m-jg93(XSS, <8.5.10), GHSA-6g55-p6wh-862q · GHSA-fxqj-rqcc-2cmp · GHSA-r28c-9q8g-f849(소스맵 파일 읽기, ≤8.5.22). **next 16.4.0**부터 해결. 15.x 최신(15.5.27)에는 수정 없음 → STEP 5 전에 업그레이드 여부 결정
+  - `next` (moderate): 위 postcss 때문에 함께 표시됨
+  - `braces`←`micromatch`←`fast-glob`←`eslint-config-next` (high, ESLint 전용): GHSA-vfj7-8cjw-p6xm(서비스 거부). npm 제안 수정 = eslint-config-next 14.2.35로 낮추기(메이저 변경) → 보류
 - Landing·Reveal의 픽셀 배치 계산이 RunnerScene(FINAL)과 중복 — 공통화하려면 FINAL 코드 수정이 필요해 보류.
 - MY PROFILE(헤더 사람 아이콘, `/profile`)은 아직 임시 화면.
 
@@ -65,9 +75,20 @@
 - Landing 문구: 기존 승인안 "나는 어떤 동물형 러너일까?" 유지 (기획서 권고안 "나를 닮은 러닝 동물은?"으로 교체할지 확인)
 - CURRENT MODE 산출 규칙 (없음 → "—"), FIRST 10K 등 MILESTONE 조건, RUN/MILESTONE 표시 기간, 같은 날 여러 기록의 대표 기준
 
+## GitHub
+
+- 저장소: https://github.com/chorockai-lab/GearMatch-AI-MVP (Public) · `main` 최초 커밋 `735f426` CI 성공
+- Issues: #1 STEP 1 · #2 STEP 2 · #3 STEP 3 · #4 STEP 4 · #5 STEP 5
+- STEP 2 브랜치: `feat/step2-onboarding` → PR로 main 반영
+
+## 남은 검증 항목
+
+- 실제 휴대폰(iOS Safari·Android Chrome)에서 전체 흐름 — 지금까지는 데스크톱 브라우저의 휴대폰 크기 흉내로만 확인
+- 새 Claude Code 세션에서 `.claude/skills` 3개 인식 — 이 PC의 별도 CLI 세션 인증이 만료돼 확인 못 함. 새 세션에서 `/gearmatch-ux` 자동완성으로 확인 필요
+- 시안과 픽셀 단위 비교(글꼴 차이 DECISION NEEDED 포함)
+
 ## 사용자 설정 필요
 
-- GitHub CLI 로그인(`gh auth login`) — PR·Issue·CI 확인에 필요
 - STEP 3: Supabase 프로젝트 생성 후 URL·anon key를 `.env.local`에 직접 입력 (키는 대화·Git에 올리지 않음), Anonymous Auth 활성화
 - STEP 4: 러닝화 Excel(제품·샘플 러너 데이터) 제공
 
