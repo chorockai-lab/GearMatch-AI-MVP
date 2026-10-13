@@ -16,6 +16,8 @@ description: Use when implementing or changing any GearMatch MVP screen (Landing
 ## 2. 기존 코드 조사
 
 - 공통: `src/components/ui/` (AppFrame·AppHeader·BottomNav·icons)
+- 온보딩: `src/components/onboarding/Flow.tsx` (FlowFrame·FlowTopBar·PrimaryButton/Link·ChoiceButton), 화면별 컴포넌트
+- 데이터: 화면은 `useOnboarding()` / `onboardingRepository`만 사용 (저장소 직접 접근 금지)
 - RUNNING: `src/components/running/` — **FINAL. 디자인 변경 금지**, 데이터 연결만.
 - 픽셀: `src/lib/assets/sprites.ts`, `public/assets/{char,human,fx}/`
 
