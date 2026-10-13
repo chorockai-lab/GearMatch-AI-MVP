@@ -35,6 +35,8 @@ jobs:
         run: npm run test:stats
       - name: ITEMS test
         run: npm run test:items
+      - name: Analytics (PostHog) policy test
+        run: npm run test:analytics
       - name: Migrations + RLS + analytics + ITEMS SQL (PGlite)
         run: npm run verify:sql
       - name: Pixel asset check
