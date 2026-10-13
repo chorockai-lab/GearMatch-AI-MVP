@@ -10,6 +10,7 @@ export const EVENT_NAMES = [
   "app_open", // once per browser session (revisit metric)
   "landing_view",
   "test_start",
+  "test_question_view", // props: { q: 1..5 } — drop-off by question; answers are never sent
   "test_complete",
   "reveal_view",
   "profile_habits_complete",
@@ -30,11 +31,27 @@ export type EventName = (typeof EVENT_NAMES)[number];
 
 type Props = Record<string, string | number | boolean | null>;
 
+const QA_KEY = "gearmatch.qa";
+/**
+ * Internal QA sessions: open any page with `?qa=1` (and `?qa=0` to stop). Events from such a browser carry
+ * `qa: true` so analytics queries can exclude them (docs/ANALYTICS_QUERIES.md).
+ */
+function isQaSession(): boolean {
+  try {
+    const flag = new URLSearchParams(window.location.search).get("qa");
+    if (flag === "1") window.localStorage.setItem(QA_KEY, "1");
+    if (flag === "0") window.localStorage.removeItem(QA_KEY);
+    return window.localStorage.getItem(QA_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function track(name: EventName, props: Props = {}): void {
   if (STORAGE_MODE !== "server" || typeof window === "undefined") return;
   const sb = getSupabase();
   if (!sb) return;
-  const row = { name, props, path: window.location.pathname.slice(0, 200), client_at: new Date().toISOString() };
+  const row = { name, props: isQaSession() ? { ...props, qa: true } : props, path: window.location.pathname.slice(0, 200), client_at: new Date().toISOString() };
   void ensureUserId()
     .then(() => sb.from("events").insert(row))
     .then((r) => {

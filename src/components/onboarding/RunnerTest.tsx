@@ -31,6 +31,7 @@ export function RunnerTest({ n }: { n: number }) {
   }, [state, n, router]);
 
   useTrackOnce("test_start", {}, n === 1 && Boolean(state));
+  useTrackOnce("test_question_view", { q: n }, Boolean(state));
 
   if (!state) return <FlowLoading error={error} onRetry={reload} />;
   const current = picked ?? state.answers[q.id] ?? null;

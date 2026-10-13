@@ -1,7 +1,8 @@
 // RLS isolation test against the real Supabase project (reads .env.local; never prints keys).
 // Creates two anonymous users A and B and proves B cannot read / change / impersonate A.
 // Run: npm run test:rls
-// Note: each run leaves 2 anonymous auth users and 1 event row ("rls_test") behind — events are append-only.
+// Note: each run leaves 2 anonymous auth users (user_metadata.qa = "rls_test") and 1 event row ("rls_test") behind — events are append-only.
+// Analytics queries exclude them (docs/ANALYTICS_QUERIES.md).
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 
@@ -27,8 +28,8 @@ const denied = (r) => Boolean(r.error) || (Array.isArray(r.data) && r.data.lengt
 const anon = client();
 const A = client();
 const B = client();
-const a = (await A.auth.signInAnonymously()).data.user;
-const b = (await B.auth.signInAnonymously()).data.user;
+const a = (await A.auth.signInAnonymously({ options: { data: { qa: "rls_test" } } })).data.user;
+const b = (await B.auth.signInAnonymously({ options: { data: { qa: "rls_test" } } })).data.user;
 check(Boolean(a?.id && b?.id && a.id !== b.id), "two anonymous users signed in");
 
 // signed-out (anon role) has no access at all
