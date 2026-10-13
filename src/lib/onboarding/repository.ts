@@ -19,73 +19,85 @@ export interface OnboardingRepository {
   reset(): Promise<void>;
 }
 
-const KEY = "gearmatch.onboarding.v1";
-// Used only when localStorage is unavailable (private mode / blocked / quota) — not as a cache.
-let memoryFallback: OnboardingState = EMPTY_STATE;
-let storageWorks = true;
+/** A localStorage-backed repository under its own key (keys never overlap, so data sets never mix). */
+function createLocalOnboardingRepository(KEY: string): OnboardingRepository {
+  // Used only when localStorage is unavailable (private mode / blocked / quota) — not as a cache.
+  let memoryFallback: OnboardingState = EMPTY_STATE;
+  let storageWorks = true;
 
-function read(): OnboardingState {
-  if (!storageWorks) return memoryFallback;
-  let raw: string | null;
-  try {
-    raw = window.localStorage.getItem(KEY);
-  } catch {
-    storageWorks = false;
-    return memoryFallback;
-  }
-  if (!raw) return EMPTY_STATE;
-  try {
-    const v = JSON.parse(raw) as Partial<OnboardingState>;
-    return {
-      answers: v.answers ?? {},
-      identity: v.identity ?? null,
-      profile: { ...EMPTY_PROFILE, ...(v.profile ?? {}) },
-      completed_at: v.completed_at ?? null,
-    };
-  } catch {
-    return EMPTY_STATE; // corrupted value → start over
-  }
-}
-
-function write(s: OnboardingState): OnboardingState {
-  memoryFallback = s;
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(s));
-  } catch {
-    storageWorks = false; // blocked (private mode / quota) → keeps working for this page session only
-  }
-  return s;
-}
-
-export const localOnboardingRepository: OnboardingRepository = {
-  kind: "local-temporary",
-  async load() {
-    return read();
-  },
-  async setAnswer(q, code) {
-    const s = read();
-    if (s.answers[q] === code) return s;
-    return write({ ...s, answers: { ...s.answers, [q]: code }, identity: null });
-  },
-  async saveIdentity(identity) {
-    return write({ ...read(), identity });
-  },
-  async saveProfile(patch) {
-    const s = read();
-    return write({ ...s, profile: { ...s.profile, ...patch } });
-  },
-  async complete() {
-    return write({ ...read(), completed_at: new Date().toISOString() });
-  },
-  async reset() {
-    memoryFallback = EMPTY_STATE;
+  function read(): OnboardingState {
+    if (!storageWorks) return memoryFallback;
+    let raw: string | null;
     try {
-      window.localStorage.removeItem(KEY);
+      raw = window.localStorage.getItem(KEY);
     } catch {
-      /* ignore */
+      storageWorks = false;
+      return memoryFallback;
     }
-  },
-};
+    if (!raw) return EMPTY_STATE;
+    try {
+      const v = JSON.parse(raw) as Partial<OnboardingState>;
+      return {
+        answers: v.answers ?? {},
+        identity: v.identity ?? null,
+        profile: { ...EMPTY_PROFILE, ...(v.profile ?? {}) },
+        completed_at: v.completed_at ?? null,
+      };
+    } catch {
+      return EMPTY_STATE; // corrupted value → start over
+    }
+  }
+
+  function write(s: OnboardingState): OnboardingState {
+    memoryFallback = s;
+    try {
+      window.localStorage.setItem(KEY, JSON.stringify(s));
+    } catch {
+      storageWorks = false; // blocked (private mode / quota) → keeps working for this page session only
+    }
+    return s;
+  }
+
+  const repo: OnboardingRepository = {
+    kind: "local-temporary",
+    async load() {
+      return read();
+    },
+    async setAnswer(q, code) {
+      const s = read();
+      if (s.answers[q] === code) return s;
+      return write({ ...s, answers: { ...s.answers, [q]: code }, identity: null });
+    },
+    async saveIdentity(identity) {
+      return write({ ...read(), identity });
+    },
+    async saveProfile(patch) {
+      const s = read();
+      return write({ ...s, profile: { ...s.profile, ...patch } });
+    },
+    async complete() {
+      return write({ ...read(), completed_at: new Date().toISOString() });
+    },
+    async reset() {
+      memoryFallback = EMPTY_STATE;
+      try {
+        window.localStorage.removeItem(KEY);
+      } catch {
+        /* ignore */
+      }
+    },
+  };
+  return repo;
+}
+
+/** DEMO / local mode: the whole onboarding state, temporary, this browser only. */
+export const localOnboardingRepository = createLocalOnboardingRepository("gearmatch.onboarding.v1");
+
+/**
+ * Server mode: only the in-progress test answers are kept locally (results/profile are server rows).
+ * Separate key, so DEMO answers from `gearmatch.onboarding.v1` are never carried into the real DB.
+ */
+export const serverDraftRepository = createLocalOnboardingRepository("gearmatch.onboarding.server-draft.v1");
 
 // ── pure helpers ────────────────────────────────────────────────────────────
 

@@ -5,7 +5,7 @@
 import { SCORING_VERSION, TEST_SCHEMA_VERSION } from "@/lib/identity/questions";
 import { isAnimalId } from "@/lib/identity/animals";
 import { ensureUserId, getSupabase } from "@/lib/supabase/client";
-import { localOnboardingRepository, type OnboardingRepository } from "./repository";
+import { serverDraftRepository as draft, type OnboardingRepository } from "./repository";
 import { EMPTY_PROFILE, type IdentityRecord, type OnboardingState, type PartialAnswers, type RunnerProfile } from "./types";
 
 const IDENTITY_COLS = "animal_type_v2, secondary_type_v2, test_answers_v2, test_schema_version, scoring_version, mixed_signal, evaluated_at";
@@ -65,7 +65,7 @@ async function load(): Promise<OnboardingState> {
   const [idRes, prRes, local] = await Promise.all([
     db().from("identity_results").select(IDENTITY_COLS).eq("user_id", userId).maybeSingle(),
     db().from("runner_profiles").select(PROFILE_COLS).eq("user_id", userId).maybeSingle(),
-    localOnboardingRepository.load(),
+    draft.load(),
   ]);
   if (idRes.error) throw idRes.error;
   if (prRes.error) throw prRes.error;
@@ -79,8 +79,8 @@ export const serverOnboardingRepository: OnboardingRepository = {
   kind: "server",
   load,
   async setAnswer(q, code) {
-    const before = await localOnboardingRepository.load();
-    await localOnboardingRepository.setAnswer(q, code);
+    const before = await draft.load();
+    await draft.setAnswer(q, code);
     if (before.answers[q] !== code) {
       const userId = await ensureUserId();
       const { error } = await db().from("identity_results").delete().eq("user_id", userId);
@@ -110,6 +110,6 @@ export const serverOnboardingRepository: OnboardingRepository = {
     const userId = await ensureUserId();
     await db().from("identity_results").delete().eq("user_id", userId);
     await db().from("runner_profiles").delete().eq("user_id", userId);
-    await localOnboardingRepository.reset();
+    await draft.reset();
   },
 };
