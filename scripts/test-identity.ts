@@ -1,7 +1,9 @@
 // Verifies the scoring implementation against Animal Identity MVP Spec §4.2 and §7.
 // Run: npm run test:identity
 import { ANIMAL_IDS, type AnimalId } from "../src/lib/identity/animals";
+import { QUESTIONS } from "../src/lib/identity/questions";
 import { evaluateIdentity, parseAnswerString, PRIMARY_OPPORTUNITY } from "../src/lib/identity/scoring";
+import { buildWhy } from "../src/lib/identity/why";
 
 let failures = 0;
 const check = (ok: boolean, msg: string) => {
@@ -52,6 +54,37 @@ check(exactTies === 98, `exact normalized ties = ${exactTies} (spec: 98)`);
 check(steps[2] + steps[3] + steps[4] === 6, `left after HOW compare = ${steps[2] + steps[3] + steps[4]} (spec: 6)`);
 check(steps[3] + steps[4] === 2, `left after primary-count compare = ${steps[3] + steps[4]} (spec: 2)`);
 check(steps[4] === 0, `fixed-order fallback used = ${steps[4]} (spec: 0)`);
+
+// WHY evidence (spec §4.4 / §5): only picked answers, ≤ 3, deterministic, tied to the result animal
+let whyOnlyPicked = true;
+let whyRelated = true;
+let whyMax3 = true;
+let whyDeterministic = true;
+let whyEmpty = 0;
+const whyCount = [0, 0, 0, 0];
+for (const a of L) for (const b of L) for (const c of L) for (const d of L) for (const e of L) {
+  const answers = parseAnswerString(a + b + c + d + e);
+  const r = evaluateIdentity(answers);
+  const why = buildWhy(answers, r.animal);
+  if (JSON.stringify(why) !== JSON.stringify(buildWhy(answers, r.animal))) whyDeterministic = false;
+  if (why.length > 3) whyMax3 = false;
+  if (why.length === 0) whyEmpty++;
+  whyCount[Math.min(why.length, 3)]++;
+  for (const w of why) {
+    const q = QUESTIONS.find((x) => x.id === w.questionId)!;
+    const opt = q.options.find((o) => o.code === w.code)!;
+    if (answers[w.questionId] !== w.code || opt.text !== w.text) whyOnlyPicked = false;
+    if (opt.primary !== r.animal && opt.secondary !== r.animal) whyRelated = false;
+  }
+}
+console.log("WHY item count distribution [0,1,2,3]:", JSON.stringify(whyCount));
+check(whyOnlyPicked, "WHY quotes only answers the user actually picked (all 3,125)");
+check(whyRelated, "every WHY item points to the result animal (primary or secondary)");
+check(whyMax3, "WHY has at most 3 items");
+check(whyDeterministic, "same answers → same WHY");
+check(whyEmpty === 0, `every result has at least 1 WHY item (empty = ${whyEmpty})`);
+const hamWhy = buildWhy(parseAnswerString("AABAC"), "HAM").map((w) => w.questionId).join(",");
+check(hamWhy === "Q1,Q2,Q4", `AABAC → HAM WHY from Q1,Q2,Q4 (got ${hamWhy})`);
 
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);
