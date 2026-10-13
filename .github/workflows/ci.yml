@@ -29,6 +29,8 @@ jobs:
         run: npm run lint
       - name: Animal Identity test
         run: npm run test:identity
+      - name: Onboarding guard test
+        run: npm run test:onboarding
       - name: Pixel asset check
         run: npm run check:assets
       - name: Next.js build
