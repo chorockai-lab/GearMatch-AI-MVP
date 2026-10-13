@@ -1,0 +1,52 @@
+// Sprite metadata for gearmatch-running-assets v1.1 (64×48 transparent PNG, 1 cell = 1 px).
+// Bounding boxes come from docs/asset-source/export-check.json (inclusive pixel coords).
+// Regenerate if the PNGs change.
+
+export const GRID_W = 64;
+export const GRID_H = 48;
+
+export interface BBox { x0: number; y0: number; x1: number; y1: number }
+
+export const SPRITE_BBOX: Record<string, BBox> = {
+  "char-cat-base": { x0: 16, y0: 10, x1: 41, y1: 43 },
+  "char-cat-run": { x0: 8, y0: 10, x1: 49, y1: 43 },
+  "char-che-base": { x0: 8, y0: 10, x1: 56, y1: 43 },
+  "char-che-run": { x0: 2, y0: 11, x1: 61, y1: 40 },
+  "char-fox-base": { x0: 3, y0: 12, x1: 52, y1: 43 },
+  "char-fox-run": { x0: 2, y0: 12, x1: 54, y1: 43 },
+  "char-goa-base": { x0: 16, y0: 7, x1: 49, y1: 43 },
+  "char-goa-run": { x0: 8, y0: 5, x1: 50, y1: 40 },
+  "char-ham-base": { x0: 20, y0: 12, x1: 43, y1: 43 },
+  "char-ham-run": { x0: 16, y0: 14, x1: 48, y1: 43 },
+  "char-hor-base": { x0: 8, y0: 4, x1: 55, y1: 43 },
+  "char-hor-run": { x0: 2, y0: 4, x1: 57, y1: 43 },
+  "char-ott-base": { x0: 10, y0: 11, x1: 39, y1: 43 },
+  "char-ott-run": { x0: 2, y0: 18, x1: 49, y1: 43 },
+  "char-wol-base": { x0: 9, y0: 10, x1: 53, y1: 43 },
+  "char-wol-run": { x0: 2, y0: 10, x1: 54, y1: 43 },
+  "fx-celebrate": { x0: 6, y0: 2, x1: 58, y1: 16 },
+  "fx-shadow": { x0: 22, y0: 42, x1: 41, y1: 43 },
+  "fx-shadow-wide": { x0: 11, y0: 42, x1: 52, y1: 43 },
+  "fx-speed": { x0: 2, y0: 22, x1: 17, y1: 36 },
+  "human-base": { x0: 25, y0: 2, x1: 40, y1: 43 },
+  "human-celebrate": { x0: 23, y0: 2, x1: 43, y1: 43 },
+  "human-run": { x0: 16, y0: 2, x1: 45, y1: 43 },
+};
+
+export type SpriteKey = keyof typeof SPRITE_BBOX;
+
+export function spriteSrc(key: string): string {
+  if (key.startsWith("char-")) return `/assets/char/${key}.png`;
+  if (key.startsWith("human-")) return `/assets/human/${key}.png`;
+  return `/assets/fx/${key}.png`;
+}
+
+export function bboxOf(key: string): BBox {
+  const b = SPRITE_BBOX[key];
+  if (!b) throw new Error(`Unknown sprite: ${key}`);
+  return b;
+}
+
+/** Horizontal centre of the drawn pixels, in grid cells (e.g. 32.5). */
+export const bboxCenterX = (b: BBox) => (b.x0 + b.x1 + 1) / 2;
+export const bboxWidth = (b: BBox) => b.x1 - b.x0 + 1;

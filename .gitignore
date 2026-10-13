@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+.env*
+.DS_Store
+npm-debug.log*
+
+# local-only reference material (internal specs, UI handoff PNG/PDF) — never push
+reference/
+incoming/
+*.zip
+!.env.example
+.claude/settings.local.json

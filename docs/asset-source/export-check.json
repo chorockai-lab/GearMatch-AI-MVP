@@ -1,0 +1,416 @@
+{
+ "char-ham-base": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 10,
+  "bbox": [
+   20,
+   12,
+   43,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "fa306a2251"
+ },
+ "char-ham-run": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 11,
+  "bbox": [
+   16,
+   14,
+   48,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "4781312423"
+ },
+ "char-che-base": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 5,
+  "bbox": [
+   8,
+   10,
+   56,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "e3d76ebf34"
+ },
+ "char-che-run": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 5,
+  "bbox": [
+   2,
+   11,
+   61,
+   40
+  ],
+  "safe": true,
+  "bottom": 40,
+  "sha1": "94915fcb8a"
+ },
+ "char-hor-base": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 9,
+  "bbox": [
+   8,
+   4,
+   55,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "3df9d17de2"
+ },
+ "char-hor-run": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 9,
+  "bbox": [
+   2,
+   4,
+   57,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "6387899b7d"
+ },
+ "char-goa-base": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 8,
+  "bbox": [
+   16,
+   7,
+   49,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "2bef20c711"
+ },
+ "char-goa-run": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 8,
+  "bbox": [
+   8,
+   5,
+   50,
+   40
+  ],
+  "safe": true,
+  "bottom": 40,
+  "sha1": "920afd30f7"
+ },
+ "char-fox-base": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 8,
+  "bbox": [
+   3,
+   12,
+   52,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "45a4d2a843"
+ },
+ "char-fox-run": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 8,
+  "bbox": [
+   2,
+   12,
+   54,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "f60c96a4cd"
+ },
+ "char-wol-base": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 6,
+  "bbox": [
+   9,
+   10,
+   53,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "add2e1ba8f"
+ },
+ "char-wol-run": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 7,
+  "bbox": [
+   2,
+   10,
+   54,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "b2dbd49244"
+ },
+ "char-ott-base": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 7,
+  "bbox": [
+   10,
+   11,
+   39,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "749ff7c369"
+ },
+ "char-ott-run": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 7,
+  "bbox": [
+   2,
+   18,
+   49,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "1de9b7e17a"
+ },
+ "char-cat-base": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 8,
+  "bbox": [
+   16,
+   10,
+   41,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "b9e13e66f5"
+ },
+ "char-cat-run": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 9,
+  "bbox": [
+   8,
+   10,
+   49,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "ba3ac4c27a"
+ },
+ "human-base": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 11,
+  "bbox": [
+   25,
+   2,
+   40,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "75ec0b3407"
+ },
+ "human-run": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 11,
+  "bbox": [
+   16,
+   2,
+   45,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "46feda1ade"
+ },
+ "human-celebrate": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 11,
+  "bbox": [
+   23,
+   2,
+   43,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "5599227086"
+ },
+ "fx-shadow": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 1,
+  "bbox": [
+   22,
+   42,
+   41,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "879a685a26"
+ },
+ "fx-shadow-wide": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 1,
+  "bbox": [
+   11,
+   42,
+   52,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "c924af99a7"
+ },
+ "fx-speed": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 2,
+  "bbox": [
+   2,
+   22,
+   17,
+   36
+  ],
+  "safe": true,
+  "bottom": 36,
+  "sha1": "454bed4e3e"
+ },
+ "fx-celebrate": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 2,
+  "bbox": [
+   6,
+   2,
+   58,
+   16
+  ],
+  "safe": true,
+  "bottom": 16,
+  "sha1": "e4155e7571"
+ }
+}

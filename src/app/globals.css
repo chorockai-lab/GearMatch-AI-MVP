@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+/* GearMatch A′ (Athletic Editorial) tokens — from RUNNING MAIN FINAL MASTER */
+@theme {
+  --color-gm-bg: #0a0a0a;
+  --color-gm-tx: #f2f1ec;
+  --color-gm-lime: #d7ff2e;
+  --color-gm-g1: #b4b3ad;
+  --color-gm-g2: #8e8d87;
+  --color-gm-line: #232321;
+  --color-gm-line2: #3a3a37;
+  --color-gm-line3: #55554f;
+  --color-gm-paper: #efece7;
+
+  --font-bc: var(--font-barlow-condensed), "Arial Narrow", sans-serif;
+  --font-bl: var(--font-barlow), "Helvetica Neue", Arial, sans-serif;
+  --font-kr: var(--font-noto-kr), "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+/* Base element styles live in @layer base so Tailwind utilities (layer utilities) can override them. */
+@layer base {
+  html,
+  body {
+    background: var(--color-gm-bg);
+    color: var(--color-gm-tx);
+  }
+  body {
+    font-family: var(--font-kr);
+    -webkit-font-smoothing: antialiased;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+@layer components {
+/* Pixel art: integer scale + nearest-neighbour only */
+.px {
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* small uppercase label used across the A′ shell */
+.gm-label {
+  font-family: var(--font-bl);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--color-gm-g2);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+}
