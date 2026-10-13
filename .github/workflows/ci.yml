@@ -33,7 +33,9 @@ jobs:
         run: npm run test:onboarding
       - name: Stats test
         run: npm run test:stats
-      - name: Migration + analytics SQL (PGlite)
+      - name: ITEMS test
+        run: npm run test:items
+      - name: Migrations + RLS + analytics + ITEMS SQL (PGlite)
         run: npm run verify:sql
       - name: Pixel asset check
         run: npm run check:assets

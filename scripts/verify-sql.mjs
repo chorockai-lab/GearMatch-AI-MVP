@@ -94,11 +94,11 @@ check(blocked, "RLS: cannot insert an event for another user");
 await db.exec(`reset role;`);
 
 // ── analytics queries from the doc ──────────────────────────────────────────
-const md = readFileSync("docs/ANALYTICS_QUERIES.md", "utf8");
+const md = readFileSync("docs/ANALYTICS_QUERIES.md", "utf8").replace(/\r\n/g, "\n"); // Windows checkouts use CRLF
 const blocks = [...md.matchAll(/```sql\n([\s\S]*?)```/g)].map((m) => m[1]);
 const withBlock = blocks[0];
 const queries = blocks.slice(1).map((b) => b.replace("-- (0의 with 블록)\n", withBlock.trimEnd() + "\n"));
-check(queries.length === 7, `found ${queries.length} queries in docs/ANALYTICS_QUERIES.md`);
+check(queries.length === 8, `found ${queries.length} queries in docs/ANALYTICS_QUERIES.md`);
 
 const results = [];
 for (const [i, q] of queries.entries()) {
