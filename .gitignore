@@ -14,3 +14,8 @@ incoming/
 *.zip
 !.env.example
 .claude/settings.local.json
+
+# ITEMS: local DEMO data and generated import SQL (never pushed)
+data/demo/
+public/demo-data/
+supabase/seed/
