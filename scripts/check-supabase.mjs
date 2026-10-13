@@ -35,15 +35,33 @@ report(settings?.external?.anonymous_users === true, `anonymous sign-ins enabled
 
 // 2) anonymous sign-in
 const sb = createClient(url, key, { auth: { persistSession: false } });
-const { data: auth, error: authErr } = await sb.auth.signInAnonymously();
+const { data: auth, error: authErr } = await sb.auth.signInAnonymously({ options: { data: { qa: "check_supabase" } } });
 report(!authErr && Boolean(auth?.user?.id), `anonymous sign-in ${authErr ? "error: " + authErr.message : "ok (is_anonymous=" + auth.user.is_anonymous + ")"}`);
 
 // 3) tables reachable (migration applied?)
-for (const t of ["identity_results", "runner_profiles", "runs", "events"]) {
+// Every column of supabase/migrations/20261013000000_init.sql is selected explicitly, so a missing / renamed
+// column (e.g. an older SQL applied by hand) fails here instead of in the app.
+const SCHEMA = {
+  identity_results: "user_id, animal_type_v2, secondary_type_v2, test_answers_v2, test_schema_version, scoring_version, mixed_signal, evaluated_at, updated_at",
+  runner_profiles:
+    "user_id, experience, runs_per_week, typical_run_distance, weekly_distance, height_cm, weight_kg, shoe_size_mm, interest_distance, current_shoe_label, current_shoe_status, onboarding_completed_at, updated_at",
+  runs: "id, user_id, run_date, distance_km, duration_sec, shoe_label, created_at, updated_at",
+  events: "id, user_id, name, props, path, client_at, created_at",
+};
+for (const [t, cols] of Object.entries(SCHEMA)) {
   // GET, not HEAD: a HEAD request returns 204 even for tables that do not exist.
-  const { error } = await sb.from(t).select("*").limit(1);
-  report(!error, `table ${t}${error ? " → " + (error.code ?? "") + " " + error.message : ""}`);
+  const { error } = await sb.from(t).select(cols).limit(1);
+  report(!error, `table ${t} (${cols.split(",").length} columns)${error ? " → " + (error.code ?? "") + " " + error.message : ""}`);
 }
+
+// updated_at trigger works (own row, then cleaned up)
+const ins = await sb.from("runs").insert({ run_date: "2026-01-01", distance_km: 1, duration_sec: 300 }).select("id, updated_at").single();
+if (!ins.error) {
+  await new Promise((r) => setTimeout(r, 1100));
+  const upd = await sb.from("runs").update({ distance_km: 2 }).eq("id", ins.data.id).select("updated_at").single();
+  report(!upd.error && upd.data.updated_at !== ins.data.updated_at, "runs.updated_at trigger updates on edit");
+  await sb.from("runs").delete().eq("id", ins.data.id);
+} else report(false, `insert test run → ${ins.error.message}`);
 
 await sb.auth.signOut();
 console.log(fail ? `\n${fail} problem(s)` : "\nSupabase OK");
