@@ -40,6 +40,7 @@ npm run test:identity   # 동물 판정 로직: 명세 §4·§7과 일치하는�
 npm run check:assets    # 캐릭터 PNG 23개가 있고 64×48인지
 npm run test:onboarding # 온보딩 화면 이동 규칙
 npm run test:stats      # 통계 계산 정의
+npm run test:items      # 비슷한 러너 집계 규칙·가져오기 검증
 npm run verify:sql      # 마이그레이션·RLS·분석 SQL (로컬 Postgres, 네트워크 없음)
 npm run check:supabase  # 실제 Supabase 연결·테이블 확인 (.env.local 필요)
 npm run test:rls        # 실제 Supabase RLS 격리 확인 (.env.local 필요)
@@ -64,7 +65,8 @@ src/app/              화면(라우트)
   dev/ dev/states/    개발 미리보기 · 8종 × 상태 QA 화면
   runs/ runs/new/ runs/[id]/(edit/)   러닝 기록 History · 입력 · 상세 · 수정/삭제
   stats/ stats/detail/  Stats Card · 상세 통계
-  items/ profile/ privacy/   다음 STEP에서 구현할 자리(임시 화면)
+  items/ items/[id]/ items/saved/   Runners Like You · 제품 상세 · 저장한 신발
+  profile/ privacy/   다음 STEP에서 구현할 자리(임시 화면)
 src/components/
   onboarding/         Landing 장면 · Runner Test · Reveal · Profile · Current Shoe · 공통 Flow 부품
   running/            RunnerScene(사람+동물 장면) · RunnerCard · RecentRuns · RunningMainView
@@ -89,6 +91,7 @@ docs/asset-source/    스프라이트 원본 데이터 · 내보내기 검사 �
   - 두 모드의 데이터는 섞이지 않습니다(DEMO 기록은 서버로 옮기지 않음).
 - 익명 사용자는 같은 브라우저에서만 이어집니다. 다른 브라우저·시크릿 창·사이트 데이터 삭제 시 복구할 수 없습니다.
 - `?state=` 미리보기 화면의 기록 값은 모두 **DEMO**입니다.
+- ITEMS 데이터·가져오기·로컬 DEMO: [`docs/ITEMS_DATA.md`](docs/ITEMS_DATA.md)
 - Supabase 운영·마이그레이션 이력: [`docs/SUPABASE.md`](docs/SUPABASE.md) · 분석 쿼리: [`docs/ANALYTICS_QUERIES.md`](docs/ANALYTICS_QUERIES.md)
 - 카드 상태 규칙은 `src/lib/running/state-policy.ts` 한 곳에 모아 두었습니다(잠정 정책).
 - 캐릭터 배치 규칙(정수 ×3 확대 · 기준점 고정 · 동물 속도선이 사람을 가리지 않음)은 `src/components/running/RunnerScene.tsx`에 있습니다.

@@ -8,9 +8,30 @@
 |---|---|---|
 | 1 | Foundation — Next.js · RUNNING Main · 픽셀 에셋 · 판정 로직 | 완료 (main) |
 | 2 | Onboarding — Landing → Test → Reveal → Profile 1/2 → Shoe → RUNNING | 완료 (main, PR #6) |
-| 3 | Running & Stats — Supabase · Run CRUD · History · Stats · 이벤트 | 구현 + **실제 Supabase 검증 완료** → PR·CI 후 main 반영 |
-| 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 착수 가능 (러닝화 Excel 필요) |
+| 3 | Running & Stats — Supabase · Run CRUD · History · Stats · 이벤트 | 완료 (main, PR #7) |
+| 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 구현 + 로컬 DEMO·PGlite 검증 완료 · **실제 Supabase 적용·검증 대기** |
 | 5 | QA & Deployment — 전체 QA · Vercel 내부 배포 | 미착수 |
+
+## STEP 4에서 구현·검증한 것
+
+| 기능 | 위치 | 검증 |
+|---|---|---|
+| DB | `supabase/migrations/20261014000000_items.sql` — products · seed_runners · seed_runner_shoes · saved_products · `runners_like_you()` | PGlite: 적용·재실행 안전, 샘플 러너 원본 조회 차단, 비활성 상품 숨김, 저장 목록 본인만, 로그아웃 호출 차단 |
+| 집계 | 서버 `runners_like_you()` = 로컬 `src/lib/items/aggregate.ts` | 같은 데이터에서 288/288 결과 일치. 단위 테스트 23건(`npm run test:items`) |
+| 가져오기 | `npm run items:import` (Excel/CSV 검증 → SQL·로컬 JSON) | Product DB v0.3_수정본: 63개(표시 50, 숨김 13), 승인 이미지 0 → 대체 실루엣. 실제 ID 형식(밑줄) 대응 |
+| 로컬 DEMO | `npm run items:demo` + `NEXT_PUBLIC_ITEMS_DEMO=1` (demo 저장 모드 전용) | 가상 러너 40명, 실제 product_id 연결, 서버 SQL 생성 거부, Git 제외 |
+| ITEMS Main | `/items` | 정상(28명·목록) / A 부족(4명) → 사용자 선택 시 B 확대(28명) → 원래 조건 / C 확대 후 부족 / 정보 부족 → 내 정보 추가 → ITEMS 복귀 |
+| Product Detail | `/items/[id]` | 비율·N명 중 X명·기록 합계(DEMO DATA 표시)·공식 링크, 저장 후 같은 화면 유지 |
+| Saved | `/items/saved` | 목록 → 상세 → 뒤로가기 시 Saved 복귀, 저장 취소, 빈 상태 |
+| DEMO 끔 | 기본 빌드 | 0명·목록 없음·DEMO 표시 없음 (가짜 수치 없음) |
+| 이벤트 | `shoe_detail_view` · `shoe_save` · `shoe_unsave` 추가(총 22종) | 로컬 모드는 전송 안 함 → 서버 모드에서 확인 예정 |
+| 320px | ITEMS 화면 5개 | 가로 넘침 0건 |
+
+### STEP 4 남은 확인 (사용자 SQL 적용 후)
+
+- `20261014000000_items.sql`, `supabase/seed/items.generated.sql`(상품 63개) SQL Editor 적용
+- `check:supabase` · `test:rls`(저장 목록 RLS 포함) · 서버 모드 브라우저(상품 상세·저장·이벤트) 확인
+- 실제 샘플 러너 데이터가 없으므로 서버 모드 ITEMS는 "비슷한 러너 부족" 상태가 정상
 
 ## STEP 3에서 구현·검증한 것
 
@@ -77,6 +98,10 @@ QA 세션(`?qa=1`)·`test:rls`·`check:supabase`로 생긴 사용자/이벤트�
 
 ## DECISION NEEDED
 
+- ITEMS 정보 부족 상태: 시안(C-profile-missing)은 인원수를 보여주지만, 확정 규칙(4개 조건)을 적용할 수 없어 숫자를 계산하지 않고 "내 정보 추가하기"만 표시 — 확인 필요
+- ITEMS 상세 "ABOUT THIS SHOE" 설명 문구: Product DB에 설명이 없어 태그·공식 링크만 표시
+- "내 정보 수정"은 MY PROFILE 화면이 없어 프로필 2단계(키·체중·발 사이즈)로 연결하고 ITEMS로 복귀. 보통 거리 수정은 아직 불가
+
 - 시안의 큰 영문 제목 글꼴(Noto 계열로 보임) vs 확정 코드 Barlow Condensed — 코드 기준 유지 중
 - 시안 없는 최소 구현: Current Shoe "직접 입력", 개인정보 안내(`/privacy`), RUNNING "?" → 결과 다시 보기
 - Stats 문장의 시안 외 경우(이전 4주 0km, 감소, 동일, 페이스 비교) 문구 — 잠정 문구 사용 중
@@ -100,10 +125,11 @@ QA 세션(`?qa=1`)·`test:rls`·`check:supabase`로 생긴 사용자/이벤트�
 - 서버 모드로 실제 내부 테스트를 하려면 `.env.local`의 `NEXT_PUBLIC_DATA_MODE=real`로 바꾼 뒤 다시 빌드 (지금은 `demo` 유지)
 - (선택) Supabase CLI 사용 시 `docs/SUPABASE.md`의 `migration repair` 절차 1회
 
-## 다음 STEP 4 작업 목록
+## 다음 STEP 5 작업 목록 (QA & Deployment)
 
-1. 러닝화 Excel → `products` · `seed_runners` · `seed_runner_shoes` 마이그레이션(새 파일) + 가져오기 스크립트, DEMO 출처 표시
-2. Runners Like You 유사 러너 집계(키·체중·발 크기·보통 거리), 실제 레코드 기준 `N명 중 X명`
-3. 데이터 부족 A → 사용자가 고른 경우에만 조건 확대 B / 여전히 부족 C
-4. Product Detail · Save(같은 화면 유지) · Saved
-5. 이벤트 추가: `shoe_detail_view` · `shoe_save` · `shoe_unsave`
+1. 실제 휴대폰(iOS Safari · Android Chrome) 전체 여정 QA, 하단 탭·safe-area·키보드 가림
+2. MY PROFILE 수정 화면(현재 임시) — 범위 결정 필요
+3. 보안: `npm audit`(Next 16 업그레이드 여부), 익명 가입 봇 방지(CAPTCHA 등), Supabase 대시보드 보안 권고(Advisors) 확인
+4. 개인정보 수집·이용 안내 문구 확정 후 `/privacy`
+5. Vercel 프로젝트 생성 · 환경변수(`NEXT_PUBLIC_DATA_MODE=real`, Supabase URL·Publishable Key) · 내부 테스트 배포 · 배포본 서버 모드 검증
+6. 실제 샘플 러너 데이터 수령 시 `items:import`로 적용 → ITEMS 정상 상태 검증

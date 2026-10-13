@@ -150,6 +150,19 @@ from (
 ) r;
 ```
 
+## 8. ITEMS 이용 (최근 7일)
+
+```sql
+-- (0의 with 블록)
+select count(distinct user_id) filter (where name = 'items_view')       as items_users,
+       count(distinct user_id) filter (where name = 'shoe_detail_view') as detail_users,
+       count(distinct user_id) filter (where name = 'shoe_save')        as save_users,
+       count(*)                filter (where name = 'shoe_save')        as saves,
+       count(*)                filter (where name = 'shoe_unsave')      as unsaves
+from ev
+where created_at >= now() - interval '7 days';
+```
+
 ## 참고
 
 - 익명 사용자 기준입니다. 같은 사람이 다른 브라우저·시크릿 창을 쓰면 다른 사용자로 셉니다.

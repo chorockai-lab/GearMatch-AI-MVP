@@ -21,6 +21,8 @@ NEXT_PUBLIC_DATA_MODE=real npm run build
 | 파일 | 적용 방법 | 적용일 | 확인 |
 |---|---|---|---|
 | `supabase/migrations/20261013000000_init.sql` | 대시보드 **SQL Editor에 붙여넣어 수동 실행** | 2026-10-13 | `npm run check:supabase`가 4개 테이블·37개 열·`updated_at` 트리거를 확인. `npm run test:rls` 통과 |
+| `supabase/migrations/20261014000000_items.sql` | SQL Editor 수동 실행 (STEP 4) | 적용 대기 | `check:supabase`·`test:rls`에 ITEMS 항목 포함 |
+| `supabase/seed/items.generated.sql` (Git 제외) | SQL Editor — 상품 63개 upsert (`docs/ITEMS_DATA.md`) | 적용 대기 | 앱에 보이는 상품 수 `check:supabase` INFO |
 
 **주의: 위 SQL을 다시 실행하지 않습니다.** (다시 실행해도 `if not exists` / `drop policy if exists`로 같은 상태가 되지만, 운영 DB에서 정책을 지웠다 다시 만드는 순간이 생깁니다.)
 
@@ -31,6 +33,7 @@ NEXT_PUBLIC_DATA_MODE=real npm run build
 npx supabase login
 npx supabase link --project-ref <project-ref>
 npx supabase migration repair --status applied 20261013000000
+npx supabase migration repair --status applied 20261014000000
 npx supabase migration list
 ```
 

@@ -23,7 +23,7 @@
 
 ## 작업 방식
 
-- 작은 단위로 변경하고, 변경 후 바로 검사한다: `npm run typecheck` · `npm run lint` · `npm run test:identity` · `npm run test:onboarding` · `npm run test:stats` · `npm run verify:sql` · `npm run check:assets` · `npm run build`
+- 작은 단위로 변경하고, 변경 후 바로 검사한다: `npm run typecheck` · `npm run lint` · `npm run test:identity` · `npm run test:onboarding` · `npm run test:stats` · `npm run test:items` · `npm run verify:sql` · `npm run check:assets` · `npm run build`
 - Supabase(서버 모드) 변경 시: `npm run check:supabase` · `npm run test:rls` (실제 DB 사용, `docs/SUPABASE.md` 참고). 마이그레이션 파일은 수정하지 말고 새 파일로 추가
 - 화면 작업 → `gearmatch-ux` Skill, 동물 판정·WHY → `gearmatch-identity` Skill, 완료·인계 → `gearmatch-quality` Skill.
 - **실행해서 확인하지 않은 것은 완료로 보고하지 않는다.** 실패·미검증은 그대로 적는다.
