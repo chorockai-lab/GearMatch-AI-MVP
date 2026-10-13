@@ -9,8 +9,8 @@
 | 1 | Foundation — Next.js · RUNNING Main · 픽셀 에셋 · 판정 로직 | 완료 (main) |
 | 2 | Onboarding — Landing → Test → Reveal → Profile 1/2 → Shoe → RUNNING | 완료 (main, PR #6) |
 | 3 | Running & Stats — Supabase · Run CRUD · History · Stats · 이벤트 | 완료 (main, PR #7) |
-| 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 구현 + **실제 Supabase 검증 완료** → PR #8 · CI 후 main 반영 |
-| 5 | QA & Deployment — 전체 QA · Vercel 내부 배포 | 미착수 |
+| 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 완료 (main, PR #8 · 실제 Supabase 검증) |
+| 5 | QA & Deployment — 전체 QA · Vercel 내부 배포 | 준비 완료 — 체크리스트 `docs/STEP5_QA_DEPLOY.md` |
 
 ## STEP 4에서 구현·검증한 것
 
@@ -122,8 +122,8 @@ QA 세션(`?qa=1`)·`test:rls`·`check:supabase`로 생긴 사용자/이벤트�
 ## GitHub
 
 - 저장소: https://github.com/chorockai-lab/GearMatch-AI-MVP (Public)
-- Issues: #1 STEP 1(완료) · #2 STEP 2(완료) · #3 STEP 3 · #4 STEP 4 · #5 STEP 5
-- STEP 3 브랜치: `feat/step3-running` → PR → CI → main
+- Issues: #1 STEP 1 · #2 STEP 2 · #3 STEP 3 · #4 STEP 4 (모두 완료) · #5 STEP 5 (진행 예정)
+- PR: #6 STEP 2 · #7 STEP 3 · #8 STEP 4 — 모두 CI 통과 후 main 병합
 
 ## 남은 검증 항목
 
@@ -137,7 +137,7 @@ QA 세션(`?qa=1`)·`test:rls`·`check:supabase`로 생긴 사용자/이벤트�
 - 서버 모드로 실제 내부 테스트를 하려면 `.env.local`의 `NEXT_PUBLIC_DATA_MODE=real`로 바꾼 뒤 다시 빌드 (지금은 `demo` 유지)
 - (선택) Supabase CLI 사용 시 `docs/SUPABASE.md`의 `migration repair` 절차 1회
 
-## 다음 STEP 5 작업 목록 (QA & Deployment)
+## 다음 STEP 5 작업 목록 (QA & Deployment) — 상세: `docs/STEP5_QA_DEPLOY.md`
 
 1. 실제 휴대폰(iOS Safari · Android Chrome) 전체 여정 QA, 하단 탭·safe-area·키보드 가림
 2. MY PROFILE 수정 화면(현재 임시) — 범위 결정 필요
