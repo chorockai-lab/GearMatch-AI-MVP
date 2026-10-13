@@ -9,7 +9,7 @@ const STATES: CardState[] = ["base", "run", "milestone"];
 export default function StatesPage() {
   return (
     <main className="mx-auto w-full max-w-[1300px] px-6 py-10">
-      <Link href="/" className="gm-label">← 개발 미리보기</Link>
+      <Link href="/dev" className="gm-label">← 개발 미리보기</Link>
       <h1 className="mt-3 font-[family-name:var(--font-bc)] text-[40px] font-extrabold uppercase">8 Animals × States</h1>
       <p className="mt-2 text-[13px] text-gm-g1">FIRST ENTRY의 장면은 BASE와 같습니다. 각 장면은 실제 PNG(×3, nearest-neighbour)입니다.</p>
       <div className="mt-8 grid gap-y-8">

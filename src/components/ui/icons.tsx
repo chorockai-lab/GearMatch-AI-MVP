@@ -45,3 +45,47 @@ export const ModeBars = () => (
     <rect x="10" y="0" width="3" height="10" fill="#F2F1EC" />
   </svg>
 );
+
+export const BackIcon = ({ size = 20, strokeWidth = 2 }: P) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="square" strokeLinejoin="miter">
+    <path d="M20 12H5M11 6l-6 6 6 6" />
+  </svg>
+);
+
+export const CheckIcon = ({ size = 16, strokeWidth = 2.6 }: P) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="square" strokeLinejoin="miter">
+    <path d="M5 12.5l4.5 4.5L19 7.5" />
+  </svg>
+);
+
+/** Heavy lime tick used in the Identity Reveal WHY list */
+export const WhyCheckIcon = () => (
+  <svg viewBox="0 0 24 20" width="24" height="20" aria-hidden="true" fill="none" stroke="#D7FF2E" strokeWidth="4.5" strokeLinecap="square" strokeLinejoin="miter">
+    <path d="M3 10.5l6 6L21 4" />
+  </svg>
+);
+
+export const ChevronDownIcon = ({ size = 18, strokeWidth = 1.8 }: P) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="square" strokeLinejoin="miter">
+    <path d="M5 9l7 7 7-7" />
+  </svg>
+);
+
+export const SearchIcon = ({ size = 20, strokeWidth = 2 }: P) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="square">
+    <circle cx="10.5" cy="10.5" r="6.5" />
+    <path d="M15.5 15.5 20 20" />
+  </svg>
+);
+
+/** Lime pixel "?" from the Landing scene (5×8 cells, 6px each). */
+export const PixelQuestion = () => (
+  <svg viewBox="0 0 5 8" width="30" height="48" aria-hidden="true" shapeRendering="crispEdges" fill="#D7FF2E">
+    <rect x="1" y="0" width="3" height="1" />
+    <rect x="0" y="1" width="1" height="1" />
+    <rect x="4" y="1" width="1" height="2" />
+    <rect x="3" y="3" width="1" height="1" />
+    <rect x="2" y="4" width="1" height="2" />
+    <rect x="2" y="7" width="1" height="1" />
+  </svg>
+);
