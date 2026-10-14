@@ -6,7 +6,9 @@
 export type PostHogMode = "off" | "qa" | "all";
 
 export function resolveMode(token: string | undefined, host: string | undefined, flag: string | undefined): PostHogMode {
-  if (!token || !host || !/^https:\/\//.test(host)) return "off";
+  // A PostHog project API key always starts with "phc_". Anything else (a project id, a personal key "phx_", a typo)
+  // would be accepted by the ingestion endpoint with HTTP 200 but land in no project — so stay off instead.
+  if (!token || !/^phc_[A-Za-z0-9]+$/.test(token) || !host || !/^https:\/\//.test(host)) return "off";
   return flag === "qa" || flag === "all" ? flag : "off";
 }
 

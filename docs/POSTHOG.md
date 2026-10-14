@@ -27,6 +27,14 @@ Supabase `events`(원본 기록)는 그대로 두고, **같은 제품 이벤트�
 - `all`: 모든 사용자. 개인정보 안내(및 필요 시 동의) 조치를 마친 뒤에만 사용. 브라우저에 `gearmatch.analytics=denied`가 있으면 보내지 않음(`setAnalyticsConsent("denied")` — 아직 화면 없음)
 - `NEXT_PUBLIC_*`는 빌드 시 고정 → Vercel에서 값을 바꾸면 **Redeploy**
 
+## 문제 해결
+
+| 증상 | 원인 · 조치 |
+|---|---|
+| PostHog 요청은 200인데 Activity에 안 보임 | 토큰이 이 프로젝트의 Project API key가 아님 — 수집 서버는 틀린 토큰도 200으로 받음. Vercel 값이 `phc_`로 시작하는지 확인(2026-10-14 Preview에서 실제 발생: 33자·`phc_` 아님). 현재 코드는 `phc_` 형식이 아니면 PostHog를 켜지 않음 |
+| 요청이 아예 없음 | `NEXT_PUBLIC_DATA_MODE=real`인지, `NEXT_PUBLIC_POSTHOG_ENABLED=qa`인지, `?qa=1`로 열었는지(localStorage `gearmatch.qa=1`), 광고 차단기 확인 |
+| 값을 바꿨는데 그대로 | `NEXT_PUBLIC_*`는 빌드 시 고정 → Vercel Redeploy 필요 |
+
 ## QA 제외
 
 - QA 세션 이벤트에는 `qa: true`가 붙고, 그 사용자는 PostHog Person 속성에도 `qa`가 등록됩니다.
