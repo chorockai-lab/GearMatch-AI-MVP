@@ -41,6 +41,7 @@ npm run check:assets    # 캐릭터 PNG 23개가 있고 64×48인지
 npm run test:onboarding # 온보딩 화면 이동 규칙
 npm run test:stats      # 통계 계산 정의
 npm run test:items      # 비슷한 러너 집계 규칙·가져오기 검증
+npm run test:analytics  # PostHog 전송 정책(허용 속성·주소 정리·켜짐 조건)
 npm run verify:sql      # 마이그레이션·RLS·분석 SQL (로컬 Postgres, 네트워크 없음)
 npm run check:supabase  # 실제 Supabase 연결·테이블 확인 (.env.local 필요)
 npm run test:rls        # 실제 Supabase RLS 격리 확인 (.env.local 필요)
@@ -91,6 +92,7 @@ docs/asset-source/    스프라이트 원본 데이터 · 내보내기 검사 �
   - 두 모드의 데이터는 섞이지 않습니다(DEMO 기록은 서버로 옮기지 않음).
 - 익명 사용자는 같은 브라우저에서만 이어집니다. 다른 브라우저·시크릿 창·사이트 데이터 삭제 시 복구할 수 없습니다.
 - `?state=` 미리보기 화면의 기록 값은 모두 **DEMO**입니다.
+- PostHog 분석 연동·대시보드: [`docs/POSTHOG.md`](docs/POSTHOG.md)
 - ITEMS 데이터·가져오기·로컬 DEMO: [`docs/ITEMS_DATA.md`](docs/ITEMS_DATA.md)
 - Supabase 운영·마이그레이션 이력: [`docs/SUPABASE.md`](docs/SUPABASE.md) · 분석 쿼리: [`docs/ANALYTICS_QUERIES.md`](docs/ANALYTICS_QUERIES.md)
 - 카드 상태 규칙은 `src/lib/running/state-policy.ts` 한 곳에 모아 두었습니다(잠정 정책).

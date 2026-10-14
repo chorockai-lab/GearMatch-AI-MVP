@@ -25,6 +25,7 @@ npm run test:identity
 npm run test:onboarding
 npm run test:stats
 npm run test:items
+npm run test:analytics
 npm run verify:sql
 npm run check:assets
 npm run build

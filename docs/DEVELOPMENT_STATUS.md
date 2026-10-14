@@ -12,6 +12,21 @@
 | 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 완료 (main, PR #8 · 실제 Supabase 검증) |
 | 5 | QA & Deployment — 전체 QA · Vercel 내부 배포 | 준비 완료 — 체크리스트 `docs/STEP5_QA_DEPLOY.md` |
 
+## PostHog 연동 (STEP 5 준비 · 브랜치 `feat/posthog-analytics`)
+
+| 항목 | 결과 (2026-10-13, 로컬 서버 모드 빌드 + `NEXT_PUBLIC_POSTHOG_ENABLED=qa`) |
+|---|---|
+| 같은 이벤트 이중 기록 | Supabase `events`와 PostHog가 같은 track() 호출로 1건씩 — QA 세션에서 이벤트 목록 일치 |
+| 사용자 식별 | PostHog distinct_id = Supabase 익명 사용자 ID (일치 확인) |
+| 일반 방문(QA 아님) | PostHog 요청 0건 · SDK 미로드 · Supabase 기록 정상 |
+| 전송 내용 | 주소 `?쿼리`·`#조각` 제거, referrer 미전송, 허용 속성만(답변·신체값·신발 이름 없음) — 실제 전송 본문 확인 |
+| 꺼진 기능 | autocapture · pageview/pageleave · replay · heatmap · flags 등 → `/e/` 외 요청 없음 |
+| PostHog 차단 시 | 화면·Supabase 저장 정상 |
+| 대시보드 | `npm run posthog:dashboard` 준비 — **사용자 Personal API key 필요(미실행)** |
+| 테스트 | `npm run test:analytics` 17건 |
+
+참고: 이 확인 중 QA 표시 없는 로컬 방문 1건(익명 사용자 1명, app_open·landing_view)이 Supabase에 남았습니다.
+
 ## STEP 4에서 구현·검증한 것
 
 | 기능 | 위치 | 검증 |

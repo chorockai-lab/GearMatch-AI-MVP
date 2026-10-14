@@ -48,6 +48,9 @@
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Publishable key (`sb_publishable_…`) — **secret 키 금지** | Production · Preview |
 | `NEXT_PUBLIC_DATA_MODE` | `real` (서버 저장) | Production · Preview |
 | `NEXT_PUBLIC_ITEMS_DEMO` | 설정하지 않음 | — |
+| `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` | PostHog Project API key (`phc_…`) | Production · Preview |
+| `NEXT_PUBLIC_POSTHOG_HOST` | `https://us.i.posthog.com` | Production · Preview |
+| `NEXT_PUBLIC_POSTHOG_ENABLED` | `qa` (개인정보 안내·동의 조치 후 `all`) | Production · Preview |
 
 - [ ] (Claude) 배포본에서 `?qa=1` QA 세션으로 전체 여정·이벤트·RLS 재확인, 결과 기록
 - `NEXT_PUBLIC_*` 값은 빌드 시 고정 → 값을 바꾸면 Vercel에서 **Redeploy** 필요

@@ -21,11 +21,14 @@
     "verify:sql": "node scripts/verify-sql.mjs && tsx scripts/verify-items-sql.mts",
     "items:import": "tsx scripts/items/import.ts",
     "items:demo": "tsx scripts/items/generate-demo.ts",
-    "test:items": "tsx scripts/test-items.ts"
+    "test:items": "tsx scripts/test-items.ts",
+    "test:analytics": "tsx scripts/test-analytics.ts",
+    "posthog:dashboard": "node scripts/posthog/create-dashboard.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
     "next": "^15.5.4",
+    "posthog-js": "^1.435.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

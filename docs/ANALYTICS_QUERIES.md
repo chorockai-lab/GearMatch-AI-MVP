@@ -167,5 +167,6 @@ where created_at >= now() - interval '7 days';
 
 - 익명 사용자 기준입니다. 같은 사람이 다른 브라우저·시크릿 창을 쓰면 다른 사용자로 셉니다.
 - `run_save_success`는 저장 성공 시에만 기록됩니다. 기록을 나중에 지워도 이벤트는 남습니다(append-only).
+- 같은 이벤트가 PostHog에도 전송됩니다(`docs/POSTHOG.md`). PostHog 차트와 이 SQL 결과를 교차 확인할 수 있습니다(PostHog는 `NEXT_PUBLIC_POSTHOG_ENABLED` 범위의 사용자만).
 - 이벤트 이름 목록: `src/lib/events/track.ts`의 `EVENT_NAMES`.
 - 이 쿼리들은 로컬 Postgres(PGlite)에 같은 마이그레이션과 표본 이벤트를 넣어 실행 검증했습니다(`npm run verify:sql` · `scripts/verify-sql.mjs`, CI에서도 실행). 실제 수치는 아직 수집 전입니다.
