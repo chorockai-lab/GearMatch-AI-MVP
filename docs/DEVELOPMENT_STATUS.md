@@ -1,6 +1,6 @@
 # 개발 현황
 
-> 최종 갱신: 2026-10-13 · 기준: 실제로 실행해 확인한 결과만 "완료"로 적습니다.
+> 최종 갱신: 2026-10-14 · 기준: 실제로 실행해 확인한 결과만 "완료"로 적습니다.
 
 ## STEP 진행
 
@@ -12,7 +12,28 @@
 | 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 완료 (main, PR #8 · 실제 Supabase 검증) |
 | 5 | QA & Deployment — 전체 QA · Vercel 내부 배포 | 준비 완료 — 체크리스트 `docs/STEP5_QA_DEPLOY.md` |
 
-## PostHog 연동 (STEP 5 준비 · 브랜치 `feat/posthog-analytics`)
+## PostHog 연동 (완료 · main, PR #10 · 2026-10-14 병합)
+
+수집 모드: **`qa`** (`?qa=1` 세션만 PostHog로 전송). `all`은 개인정보 안내·동의 결정 전까지 켜지 않음.
+
+### 배포 환경 검증 (2026-10-14)
+
+| 항목 | Preview (`feat/posthog-analytics`) | Production (`main` e53cec8) |
+|---|---|---|
+| 빌드 반영 | `DATA_MODE=real` · 모드 `qa` · 토큰 `phc_` 형식 | 같음 (배포 번들에서 확인, 값은 출력하지 않음) |
+| 일반 방문(QA 아님) | — | PostHog 요청 0건 · Supabase 기록 정상(app_open·landing_view) |
+| `?qa=1` | `gearmatch.qa=1` 저장 | 같음 |
+| 흐름 | Landing → Q1~Q5 → Reveal(WOL) → Profile 1 → 2단계 건너뛰기 → Shoe(모델명 모름) → RUNNING | 같음 |
+| Supabase `events` | 14건 · 모두 `qa: true` · 중복 없음 · `test_question_view` q=1~5 각 1건 | QA 13건 · 모두 `qa: true` · 중복 없음 (app_open은 세션당 1회라 앞선 일반 방문에서 기록됨) |
+| PostHog 전송 | `/e/` 9회 모두 200 | `/e/` 8회 모두 200 |
+| 사용자 ID | PostHog distinct_id = Supabase 익명 사용자 ID | 같음 |
+| PostHog Activity | 사용자가 직접 확인: landing_view ~ profile_habits_complete, 같은 사용자, `qa: true`(Boolean) | — (PostHog 화면은 사용자 로그인 필요) |
+
+- 처음 Preview에서 Activity에 이벤트가 안 보인 원인: Vercel의 토큰 값이 Project API key(`phc_…`)가 아니었음. 수집 서버가 틀린 토큰에도 200을 돌려줘 겉보기엔 성공. → 값 수정 + 코드에서 `phc_` 형식이 아니면 PostHog를 켜지 않도록 함(`e4b50bd`).
+- Production 확인용으로 익명 사용자 1명이 생김. QA 표시 이벤트가 있어 분석에서 제외됨(`docs/ANALYTICS_QUERIES.md` §0). 일반 방문 2건(app_open·landing_view)은 PostHog로 보내지 않음.
+- PostHog 전송 본문(쿼리 제거·허용 속성만)은 아래 로컬 검증에서 실제 본문으로 확인. 배포본은 같은 코드.
+
+### 로컬 검증
 
 | 항목 | 결과 (2026-10-13, 로컬 서버 모드 빌드 + `NEXT_PUBLIC_POSTHOG_ENABLED=qa`) |
 |---|---|
@@ -22,8 +43,8 @@
 | 전송 내용 | 주소 `?쿼리`·`#조각` 제거, referrer 미전송, 허용 속성만(답변·신체값·신발 이름 없음) — 실제 전송 본문 확인 |
 | 꺼진 기능 | autocapture · pageview/pageleave · replay · heatmap · flags 등 → `/e/` 외 요청 없음 |
 | PostHog 차단 시 | 화면·Supabase 저장 정상 |
-| 대시보드 | `npm run posthog:dashboard` 준비 — **사용자 Personal API key 필요(미실행)** |
-| 테스트 | `npm run test:analytics` 17건 |
+| 대시보드 | `npm run posthog:dashboard` 준비 — **사용자 Personal API key 필요(미실행)** · 다음 작업 |
+| 테스트 | `npm run test:analytics` 20건 (토큰 형식 검사 3건 포함) |
 
 참고: 이 확인 중 QA 표시 없는 로컬 방문 1건(익명 사용자 1명, app_open·landing_view)이 Supabase에 남았습니다.
 
@@ -138,13 +159,16 @@ QA 세션(`?qa=1`)·`test:rls`·`check:supabase`로 생긴 사용자/이벤트�
 
 - 저장소: https://github.com/chorockai-lab/GearMatch-AI-MVP (Public)
 - Issues: #1 STEP 1 · #2 STEP 2 · #3 STEP 3 · #4 STEP 4 (모두 완료) · #5 STEP 5 (진행 예정)
-- PR: #6 STEP 2 · #7 STEP 3 · #8 STEP 4 — 모두 CI 통과 후 main 병합
+- PR: #6 STEP 2 · #7 STEP 3 · #8 STEP 4 · #9 STEP 5 인계 문서 · #10 PostHog — 모두 CI 통과 후 main 병합
+- Vercel: PR마다 Preview, `main` 병합 시 Production 자동 배포 (#10 병합본 Production 배포 성공 확인)
 
 ## 남은 검증 항목
 
 - 실제 휴대폰(iOS Safari·Android Chrome) 전체 흐름
-- 새 Claude Code 세션에서 `.claude/skills` 3개 인식(현재 세션은 Skill 생성 전에 시작돼 호출 불가)
-- Vercel 등 배포 환경에서 서버 모드 빌드(STEP 5)
+- PostHog `GearMatch MVP KPI` 대시보드 7개 생성 및 차트 확인(다음 작업)
+- Production에서 RUNNING 이후 흐름(기록 저장·Stats·ITEMS)의 PostHog 수집 — 이번엔 RUNNING 진입까지만 확인
+
+확인됨(2026-10-14): `.claude/skills` 3개 인식 · Vercel Preview/Production 서버 모드 빌드(익명 로그인·Supabase 기록·PostHog QA 수집)
 
 ## 사용자 설정 필요
 
