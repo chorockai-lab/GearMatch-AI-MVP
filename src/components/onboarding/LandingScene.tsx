@@ -1,58 +1,30 @@
-// Landing scene (UI handoff 01_LANDING/landing.png): the running human + a lime pixel "?" where the animal will appear.
-// Same lane geometry and anchors as RunnerScene (RUNNING MAIN FINAL MASTER §03) so the two scenes line up.
-import { bboxCenterX, bboxOf, bboxWidth, spriteSrc } from "@/lib/assets/sprites";
-import { PixelQuestion } from "@/components/ui/icons";
+// Landing hero — the approved key visual (2026-10-15), shown as-is: public/assets/landing/landing-hero-approved.png
+// (1672×941). Never cropped (full width, original aspect ratio); the colours around it continue its own edges.
+import Image from "next/image";
 
-const SC = 3;
-const H = 192;
-const BASE_Y = H - 18;
-const LANE = 8 * SC;
-const HUMAN_CX = (100 / 390) * 100;
-const QUESTION_CX = (257 / 390) * 100;
-const SPR_W = 64 * SC;
-const SPR_H = 48 * SC;
-const HUMAN_TOP = BASE_Y - 44 * SC;
+const SRC = "/assets/landing/landing-hero-approved.png";
+const W = 1672;
+const H = 941;
 
-const anchorLeft = (cxPct: number, baseKey: string, extraPx = 0) =>
-  `calc(${cxPct.toFixed(4)}% - ${Math.round(bboxCenterX(bboxOf(baseKey)) * SC) - extraPx}px)`;
-
-function Px({ src, left, alt }: { src: string; left: string; alt?: string }) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt={alt ?? ""}
-      aria-hidden={alt ? undefined : true}
-      width={SPR_W}
-      height={SPR_H}
-      className="px absolute max-w-none"
-      style={{ left, top: HUMAN_TOP, width: SPR_W, height: SPR_H }}
-      draggable={false}
-    />
-  );
-}
+/** Average colour of the image's top / bottom edge — the header above and the fade below use them. */
+export const HERO_TOP = "#031027";
+export const HERO_BOTTOM = "#010e1a";
 
 export function LandingScene() {
-  const hb = bboxOf("human-run");
-  const shadowOffset = Math.round(bboxCenterX(hb) - 32) * SC;
   return (
-    <div
-      className="relative w-full overflow-hidden"
-      style={{
-        height: H,
-        backgroundColor: "#0A0A0A",
-        backgroundImage: `repeating-linear-gradient(180deg, transparent 0 ${LANE - 1}px, #232321 ${LANE - 1}px ${LANE}px)`,
-        backgroundPosition: `0 ${BASE_Y % LANE}px`,
-      }}
-    >
-      <span aria-hidden="true" className="absolute inset-x-0 h-px" style={{ top: BASE_Y, background: "#3A3A37" }} />
-      <span aria-hidden="true" className="absolute inset-x-0 h-px" style={{ top: BASE_Y - LANE, background: "#2E2E2B" }} />
-      <Px src={spriteSrc(bboxWidth(hb) > 34 ? "fx-shadow-wide" : "fx-shadow")} left={anchorLeft(HUMAN_CX, "human-base", shadowOffset)} />
-      <Px src={spriteSrc("fx-speed")} left={anchorLeft(HUMAN_CX, "human-base", (hb.x0 - 18) * SC)} />
-      <Px src={spriteSrc("human-run")} left={anchorLeft(HUMAN_CX, "human-base")} alt="달리는 Pixel Runner" />
-      <span className="absolute" style={{ left: `calc(${QUESTION_CX.toFixed(4)}% - 15px)`, top: 62 }}>
-        <PixelQuestion />
-      </span>
+    <div className="relative w-full">
+      <Image
+        src={SRC}
+        alt="달빛 아래 숲길을 달리는 러너와, 그 뒤를 따라오는 말·늑대·여우·치타"
+        width={W}
+        height={H}
+        priority
+        quality={90}
+        sizes="(max-width: 430px) 100vw, 430px"
+        className="block h-auto w-full"
+      />
+      {/* below the picture: its bottom-edge colour fading into the page (nothing is drawn over the image) */}
+      <div aria-hidden="true" className="h-4" style={{ background: `linear-gradient(${HERO_BOTTOM}, var(--color-gm-bg))` }} />
     </div>
   );
 }
