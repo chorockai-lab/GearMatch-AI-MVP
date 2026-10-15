@@ -12,17 +12,17 @@
 | 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 완료 (main, PR #8 · 실제 Supabase 검증) |
 | 5 | QA & Deployment — 전체 QA · Vercel 내부 배포 | 준비 완료 — 체크리스트 `docs/STEP5_QA_DEPLOY.md` |
 
-## 랜딩 히어로 — 밤의 러닝 (브랜치 `feat/landing-night-hero` · 2026-10-15)
+## 랜딩 히어로 — 확정 원본 이미지 적용 (브랜치 `feat/landing-night-hero` · 2026-10-15)
 
 | 항목 | 내용 |
 |---|---|
-| 기준 | 사용자 확정 레퍼런스(밤 숲, 달, 반딧불, 앞에서 달리는 러너 + 뒤따르는 동물 3~4마리) |
-| 구성 | 기존 `human-run`(4배)을 앞에, `char-{hor,wol,fox,che}-run`을 달빛 실루엣으로 바꾼 4마리를 뒤에(3·4배). 새 캐릭터 없음 |
-| 에셋 | `public/assets/landing/` night-bg·moon·sil-* (총 약 6KB) — `python -I scripts/assets/landing-hero.py`로 재생성 |
-| 반응형 | 장면은 아래 기준 정렬, 짧은 화면은 하늘만 줄어듦(달은 항상 보임). 390×844·375×667에서 CTA가 첫 화면에 보임, 320×568은 스크롤 필요 |
-| 모션 | 반딧불 깜빡임만(느린 단계형), `prefers-reduced-motion`이면 정지 |
-| 문구 | 라벨·헤드라인·CTA 유지, 서브카피 "5개의 질문으로 나와 닮은 러닝 동물을 찾아보세요." |
-| 미검증 | 실기기(iOS Safari·카카오톡 인앱) 표시 |
+| 이미지 | 사용자 확정 원본을 그대로 사용: `public/assets/landing/landing-hero-approved.png` (1672×941, 원본을 무손실 PNG로 변환·픽셀 동일 확인). 다시 그리거나 합성하지 않음 |
+| 표시 | 가로 꽉 채움 + 원본 비율 유지(잘라내지 않음). 헤더·아래 여백 색은 이미지 위/아래 가장자리 색으로 연결. 이미지 위에 덮는 요소 없음 |
+| 용량 | Next.js 이미지 최적화(화면 폭에 맞춰 WebP/AVIF, 품질 90). 640px 기준 약 60KB (원본 PNG 1.4MB) |
+| 문구 | YOUR RUNNING ANIMAL / 당신 안의 러닝 동물은 무엇일까요? / 5개의 질문으로 나의 러닝 성향을 발견해 보세요. / 내 러닝 동물 알아보기 |
+| 화면 확인 | 390×844·375×667·320×568 모두 이미지 전체 + CTA가 첫 화면에 보임. 원본과 390px 실제 화면 비교: 캐릭터·동물·구도 동일(평균 픽셀 차이 약 1%, 축소·압축 차이) |
+| 참고 | 랜딩 캐릭터(빨간 상의)는 RUNNING 화면의 Pixel Runner와 외형이 다름 — 사용자 결정으로 랜딩만 원본 우선. 다른 화면은 변경 없음 |
+| 미검증 | 실기기(iOS Safari·카카오톡 인앱) |
 
 ## MVP 안정화 1차 (브랜치 `feat/step5-revisit-dashboards` · 2026-10-15)
 
