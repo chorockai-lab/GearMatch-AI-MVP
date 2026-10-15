@@ -30,7 +30,7 @@
 |---|---|---|
 | PostHog 대시보드 정의 — `GearMatch MVP KPI`(7개, QA 제외) · `GearMatch QA Monitor`(4개, QA만) | **생성 완료 (2026-10-15, 대시보드 2 · 차트 11)** — [KPI](https://us.posthog.com/project/662151/dashboard/2213495) · [QA Monitor](https://us.posthog.com/project/662151/dashboard/2213496) | `npm run posthog:check` 17건 통과(PostHog 공개 API 스키마·최신 쿼리 스키마), `test:analytics` 대시보드 검사 7건 |
 | 재방문 진입 — `/`에서 저장된 상태 확인 후 RUNNING / 남은 단계 / Landing | 구현·검증 | `test:onboarding` entryPath 8건, 로컬 서버 모드·DEMO·Preview 브라우저 확인 (`docs/QA_REVISIT.md`) |
-| 재접속 QA 도구 `/dev/session` (QA 전용) | 구현·Preview 확인 | 같은 브라우저: ID·동물·기록·Saved·PostHog ID 유지 / 저장 정보 삭제: 새 사용자(정상 제약) |
+| 재접속 QA 도구 `/dev/session` (QA 전용, **Production 404**) | 구현·Preview 확인 · Production 빌드에서 404 확인 | 같은 브라우저: ID·동물·기록·Saved·PostHog ID 유지 / 저장 정보 삭제: 새 사용자(정상 제약) |
 | 카카오톡·다른 브라우저 실기기 시나리오 | **미검증** (실기기 필요) | 절차·예상 동작: `docs/QA_REVISIT.md` · Issue #12 |
 | 계정 연결 권장안 | 보고(구현 안 함) | `docs/ACCOUNT_LINKING.md` — 1단계 이메일 OTP 연결 권장 · Issue #13 |
 
