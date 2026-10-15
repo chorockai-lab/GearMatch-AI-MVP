@@ -9,7 +9,8 @@
 - **`/dev/session`** (QA 전용, 제품 화면에서 링크 없음): 브라우저 종류, 사용자 ID 끝 8자리, 러닝 동물, 온보딩 완료, 러닝 기록 수, 저장한 신발 수, PostHog ID 일치 여부.
   새 사용자를 만들지 않습니다(세션이 없으면 "없음 — 새 사용자").
 - 시험 전 각 브라우저에서 `?qa=1`로 한 번 열어 QA 표시를 켭니다(분석 제외).
-- 링크: Preview 또는 Production 주소 + `/dev/session?qa=1`
+- 링크: **Preview** 주소 + `/dev/session?qa=1` (Production에서는 404 — 일반 사용자에게 노출하지 않음. 로컬 실행에서는 열림)
+- 실기기 시험은 Vercel Preview 주소로 진행합니다(Preview 접근에 Vercel 로그인 또는 공유 링크 필요).
 
 ## 공통 절차 (브라우저 A → B)
 
