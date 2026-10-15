@@ -42,7 +42,7 @@ const QA_KEY = "gearmatch.qa";
  * Internal QA sessions: open any page with `?qa=1` (and `?qa=0` to stop). Events from such a browser carry
  * `qa: true` so analytics queries can exclude them (docs/ANALYTICS_QUERIES.md).
  */
-function isQaSession(): boolean {
+export function isQaSession(): boolean {
   try {
     const flag = new URLSearchParams(window.location.search).get("qa");
     if (flag === "1") window.localStorage.setItem(QA_KEY, "1");

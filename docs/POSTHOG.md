@@ -41,9 +41,15 @@ Supabase `events`(원본 기록)는 그대로 두고, **같은 제품 이벤트�
 - 대시보드의 모든 차트는 `qa is not set` 조건으로 QA 이벤트를 뺍니다.
 - (선택) PostHog Project settings → **Filter out internal and test users**에 `qa` `is set`(event property)을 추가하면 다른 화면에서도 "Filter out internal and test users"로 제외할 수 있습니다.
 
-## 대시보드 만들기 ("GearMatch MVP KPI")
+## 대시보드 만들기 ("GearMatch MVP KPI" · "GearMatch QA Monitor")
 
-PostHog → 좌측 아래 프로필 → **Personal API keys** → 새 키(Scopes: `dashboard:write`, `insight:write`)를 만든 뒤, **본인 터미널**에서:
+정의: `scripts/posthog/dashboards.mjs` (기존 이벤트만 사용, 가상 수치 없음)
+
+1. **호환성 확인 (키 불필요)**: `npm run posthog:check` — PostHog 공개 API 스키마에서 대시보드·인사이트 경로와 권한, 최신 쿼리 스키마로 11개 차트 정의를 검사합니다. 통과해야 2로 진행.
+2. PostHog → 좌측 아래 프로필 → **Personal API keys** → 새 키(Scopes: `dashboard:write`, `insight:write`, 프로젝트 GearMatch만)
+3. 키 넣기 — 둘 중 하나 (Git에 올라가지 않음)
+   - `.env.local`에 `POSTHOG_PERSONAL_API_KEY=phx_…` 한 줄 추가 → `npm run posthog:dashboard` (Claude가 대신 실행 가능, 키는 출력하지 않음)
+   - 또는 본인 터미널에서:
 
 ```powershell
 $env:POSTHOG_PERSONAL_API_KEY = "<붙여넣기>"
@@ -51,7 +57,12 @@ npm run posthog:dashboard
 Remove-Item Env:POSTHOG_PERSONAL_API_KEY
 ```
 
-키는 출력·저장되지 않습니다. 다시 실행해도 이미 있는 차트는 그대로 둡니다.
+4. 끝나면 키를 PostHog에서 삭제(또는 `.env.local`에서 줄 삭제)해도 됩니다. 대시보드는 남습니다.
+
+키는 출력·저장되지 않습니다. 다시 실행해도 같은 이름의 대시보드·차트는 그대로 둡니다.
+**현재 수집 모드가 `qa`라서 KPI 대시보드(QA 제외)는 실제 사용자 데이터가 없어 비어 있는 것이 정상**입니다. QA Monitor에는 `?qa=1` 세션만 보입니다.
+
+### GearMatch MVP KPI
 
 | 차트 | 정의 (최근 30일, QA 제외) |
 |---|---|
@@ -62,6 +73,17 @@ Remove-Item Env:POSTHOG_PERSONAL_API_KEY
 | 첫 러닝 기록률 | 퍼널 `onboarding_complete` → `run_save_success` |
 | ITEMS → 신발 상세 → 저장 | 퍼널 `items_view` → `shoe_detail_view` → `shoe_save` |
 | 재방문율 (주간) | 리텐션 `app_open` → `app_open`, 주 단위 8주 |
+
+### GearMatch QA Monitor (내부 검증용 · `qa is set`)
+
+| 차트 | 정의 |
+|---|---|
+| QA 이벤트 (이벤트별, 7일) | 모든 이벤트 수를 이벤트 이름별 표로 — Supabase `events`(props.qa = true)와 건수 비교 |
+| QA 사용자 수 (일별) | QA 세션 고유 사용자/일 |
+| QA 온보딩 흐름 | 퍼널 `test_start` → `test_complete` → `reveal_view` → `onboarding_complete` → `running_view` (7일) |
+| QA 최근 이벤트 | 최근 100건: 이벤트·distinct_id(= Supabase 사용자 ID)·q·animal·시간 |
+
+참고: 재방문 진입(2026-10-15)부터 `landing_view`는 Landing이 **실제로 보였을 때만** 기록됩니다(온보딩을 마친 사용자가 `/`로 와서 RUNNING으로 바로 이동하면 기록 안 함). `app_open`은 그대로 세션당 1회.
 
 실제 사용자 데이터가 들어오기 전에는 차트가 비어 있습니다(가상 수치 없음).
 Supabase 쪽 같은 지표는 `docs/ANALYTICS_QUERIES.md`(원본 기준, 교차 확인용).

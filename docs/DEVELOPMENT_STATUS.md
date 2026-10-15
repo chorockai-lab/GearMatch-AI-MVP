@@ -1,6 +1,6 @@
 # 개발 현황
 
-> 최종 갱신: 2026-10-14 · 기준: 실제로 실행해 확인한 결과만 "완료"로 적습니다.
+> 최종 갱신: 2026-10-15 · 기준: 실제로 실행해 확인한 결과만 "완료"로 적습니다.
 
 ## STEP 진행
 
@@ -11,6 +11,26 @@
 | 3 | Running & Stats — Supabase · Run CRUD · History · Stats · 이벤트 | 완료 (main, PR #7) |
 | 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 완료 (main, PR #8 · 실제 Supabase 검증) |
 | 5 | QA & Deployment — 전체 QA · Vercel 내부 배포 | 준비 완료 — 체크리스트 `docs/STEP5_QA_DEPLOY.md` |
+
+## MVP 안정화 1차 (브랜치 `feat/step5-revisit-dashboards` · 2026-10-15)
+
+| 작업 | 상태 | 근거 |
+|---|---|---|
+| PostHog 대시보드 정의 — `GearMatch MVP KPI`(7개, QA 제외) · `GearMatch QA Monitor`(4개, QA만) | 정의·호환성 검증 완료 · **생성은 미실행**(Personal API key 필요) | `npm run posthog:check` 17건 통과(PostHog 공개 API 스키마·최신 쿼리 스키마), `test:analytics` 대시보드 검사 7건 |
+| 재방문 진입 — `/`에서 저장된 상태 확인 후 RUNNING / 남은 단계 / Landing | 구현·검증 | `test:onboarding` entryPath 8건, 로컬 서버 모드·DEMO·Preview 브라우저 확인 (`docs/QA_REVISIT.md`) |
+| 재접속 QA 도구 `/dev/session` (QA 전용) | 구현·Preview 확인 | 같은 브라우저: ID·동물·기록·Saved·PostHog ID 유지 / 저장 정보 삭제: 새 사용자(정상 제약) |
+| 카카오톡·다른 브라우저 실기기 시나리오 | **미검증** (실기기 필요) | 절차·예상 동작: `docs/QA_REVISIT.md` · Issue #12 |
+| 계정 연결 권장안 | 보고(구현 안 함) | `docs/ACCOUNT_LINKING.md` — 1단계 이메일 OTP 연결 권장 · Issue #13 |
+
+- 현재 PostHog 수집 모드가 `qa`라 KPI 대시보드(QA 제외)는 실제 사용자 데이터가 없어 비어 있는 것이 정상.
+- `landing_view`는 이제 Landing이 실제로 보였을 때만 기록(재방문자가 RUNNING으로 바로 가면 기록 안 함).
+
+### 남은 작업 순서 (의존성 기준)
+
+1. #12 모바일 실기기 QA (P1, 의존 없음)
+2. #14 개인정보 안내·보안 (P1) → #13 계정 연결 (P1, SMTP는 #18 AWS 검토와 함께 결정)
+3. #15 MY PROFILE (P2, 계정 연결 진입점 위치와 연동) · #16 카드 PNG 공유 (P2) · #17 QA DEMO 데이터 (P2)
+4. #18 AWS 검토 (P2, 결정 먼저) · #19 랜딩 디자인 비교 (P3)
 
 ## PostHog 연동 (완료 · main, PR #10 · 2026-10-14 병합)
 
@@ -141,7 +161,7 @@ QA 세션(`?qa=1`)·`test:rls`·`check:supabase`로 생긴 사용자/이벤트�
 ## 알려진 문제 · 한계
 
 - 첫 화면 방문만으로 익명 사용자가 생깁니다(방문 집계용). 봇·대량 생성 방지(CAPTCHA 등)는 외부 공개 전 STEP 5에서 결정.
-- 익명 사용자는 같은 브라우저에서만 이어짐 — 다른 브라우저·데이터 삭제 시 복구 불가(안내 문구는 STEP 5).
+- 익명 사용자는 같은 브라우저에서만 이어짐 — 다른 브라우저·카카오톡 인앱·데이터 삭제 시 복구 불가. iOS Safari는 7일 미방문 시 저장소를 지울 수 있음. 해결: 계정 연결(#13).
 - `test:rls`·`check:supabase`를 실행할 때마다 검증용 익명 사용자가 남음(분석에서 제외됨).
 - MY PROFILE(`/profile`) 수정 화면은 아직 임시 화면.
 - `npm audit`: Next.js 15 내부 `postcss`(next 16.4.0에서 해결), ESLint 경로 `braces` — STEP 5 전 결정.
@@ -158,14 +178,14 @@ QA 세션(`?qa=1`)·`test:rls`·`check:supabase`로 생긴 사용자/이벤트�
 ## GitHub
 
 - 저장소: https://github.com/chorockai-lab/GearMatch-AI-MVP (Public)
-- Issues: #1 STEP 1 · #2 STEP 2 · #3 STEP 3 · #4 STEP 4 (모두 완료) · #5 STEP 5 (진행 예정)
-- PR: #6 STEP 2 · #7 STEP 3 · #8 STEP 4 · #9 STEP 5 인계 문서 · #10 PostHog — 모두 CI 통과 후 main 병합
+- Issues: #1 STEP 1 · #2 STEP 2 · #3 STEP 3 · #4 STEP 4 (모두 완료) · #5 STEP 5 (진행 중) · #12~#19 안정화 후속 작업
+- PR: #6 STEP 2 · #7 STEP 3 · #8 STEP 4 · #9 STEP 5 인계 문서 · #10 PostHog · #11 현황 문서 — 모두 CI 통과 후 main 병합
 - Vercel: PR마다 Preview, `main` 병합 시 Production 자동 배포 (#10 병합본 Production 배포 성공 확인)
 
 ## 남은 검증 항목
 
 - 실제 휴대폰(iOS Safari·Android Chrome) 전체 흐름
-- PostHog `GearMatch MVP KPI` 대시보드 7개 생성 및 차트 확인(다음 작업)
+- PostHog 대시보드 2개 생성 실행 및 차트 확인 — Personal API key 필요
 - Production에서 RUNNING 이후 흐름(기록 저장·Stats·ITEMS)의 PostHog 수집 — 이번엔 RUNNING 진입까지만 확인
 
 확인됨(2026-10-14): `.claude/skills` 3개 인식 · Vercel Preview/Production 서버 모드 빌드(익명 로그인·Supabase 기록·PostHog QA 수집)

@@ -10,6 +10,7 @@ import { runsRepository } from "@/lib/running/repository";
 import { itemsRepository } from "@/lib/items/repository";
 import { ANIMALS } from "@/lib/identity/animals";
 import { BROWSER_LABEL, detectBrowser } from "@/lib/qa/browser";
+import { isQaSession } from "@/lib/events/track";
 
 interface Snapshot {
   browser: string;
@@ -35,7 +36,7 @@ function readLocal(key: RegExp): string | null {
 
 async function snapshot(): Promise<Snapshot> {
   const browser = BROWSER_LABEL[detectBrowser(navigator.userAgent)];
-  const qa = readLocal(/^gearmatch\.qa$/) === "1";
+  const qa = isQaSession(); // applies ?qa=1 / ?qa=0 like every other page
   let posthogId: string | null = null;
   try {
     posthogId = (JSON.parse(readLocal(/^ph_phc_.+_posthog$/) ?? "{}") as { distinct_id?: string }).distinct_id ?? null;
