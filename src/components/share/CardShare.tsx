@@ -1,56 +1,96 @@
 "use client";
-// "이미지 저장·공유" (Issue #16): renders the on-screen card (by id) into a 3× PNG with a small GEARMATCH mark,
-// shows a preview, then offers what this browser really supports — system share sheet, download, or (in-app
-// browsers) long-press saving. Only what is on the card goes into the image; nothing is sent to a server.
+// "이미지 저장" (Issue #16, save UX v2): renders the on-screen card (by id) into a 3× PNG with a small GEARMATCH mark
+// and saves it the way this browser really can:
+//   • iPhone (Safari / Chrome, not in-app) → system share sheet (its "이미지 저장" puts it in Photos).
+//     Safari only opens the sheet right after a tap, so on iPhone the PNG is prepared in the background while the
+//     card is on screen; if it is not ready or the sheet is refused, we fall back to the preview + long-press.
+//   • Android Chrome and other browsers → immediate download (generated on tap; no background work).
+//   • KakaoTalk / other in-app browsers → preview + long-press saving (downloads usually go nowhere there).
+// Completion we cannot observe is never shown as success. Nothing is sent to a server.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { track } from "@/lib/events/track";
 import { paintInto } from "@/lib/share/paint";
-import { canShareFile, cardFilename, isInAppBrowser, shareFile, startDownload, type CardKind, type ShareMethod, type ShareResult } from "@/lib/share/share";
+import { canShareFile, cardFilename, isInAppBrowser, saveTarget, shareFile, startDownload, type CardKind, type ShareMethod, type ShareResult } from "@/lib/share/share";
 import { PrimaryButton } from "@/components/onboarding/Flow";
 import { CloseIcon, SaveIcon } from "@/components/ui/icons";
 
 const SCALE = 3;
 const WIDTH = 390; // design width (UI handoff) — the image is the same on every phone
 const BG = "#0a0a0a"; // --color-gm-bg
+const TIMEOUT_MS = 15_000;
+const PREPARE_DELAY_MS = 700; // let the page settle before the background render (iPhone only)
 
-interface Ready {
+interface CardImage {
   blob: Blob;
   file: File;
-  url: string; // object URL, or a data URL in in-app browsers (long-press saving works more reliably)
-  shareable: boolean;
-  inApp: boolean;
 }
-
-const TIMEOUT_MS = 15_000;
+interface Sheet {
+  url: string; // data URL — long-press saving works most reliably with it
+  file: File;
+  shareable: boolean; // in-app browsers that support the share sheet keep their 공유하기 button
+  note: string;
+}
 
 /** Two animation frames for layout — with a timer fallback, since browsers pause frames in hidden pages. */
 const nextFrame = () =>
   Promise.race([new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))), new Promise((r) => setTimeout(r, 120))]);
 
-/** Never leave the user on "만드는 중": after TIMEOUT_MS the attempt fails and the retry block is shown. */
+/** Never leave the user waiting: after TIMEOUT_MS the attempt fails. */
 const withTimeout = <T,>(p: Promise<T>) =>
   Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timed out")), TIMEOUT_MS))]);
 
-async function renderCard(target: HTMLElement, host: HTMLElement, slot: HTMLElement): Promise<Blob> {
+/** Offscreen copy of the card at the design width + the GEARMATCH (and DEMO DATA) mark below it. */
+function buildFrame(card: CardKind, demo: boolean) {
+  const host = document.createElement("div");
+  host.setAttribute("aria-hidden", "true");
+  host.className = "bg-gm-bg text-gm-tx";
+  host.style.cssText = `position:fixed;left:-10000px;top:0;width:${WIDTH}px`;
+  const slot = document.createElement("div");
+  if (card === "stats") slot.className = "px-6 pt-6";
+  const footer = document.createElement("div");
+  footer.className = "flex items-center gap-2.5 px-6 pt-5 pb-5";
+  const brand = document.createElement("span");
+  brand.className = "font-[family-name:var(--font-bc)] text-[13px] font-extrabold tracking-[0.22em] text-gm-g2";
+  brand.textContent = "GEARMATCH";
+  footer.append(brand);
+  if (demo) {
+    const badge = document.createElement("span");
+    badge.className = "border border-gm-line3 px-1.5 py-px font-[family-name:var(--font-bl)] text-[10px] font-bold tracking-[0.12em] text-gm-g1";
+    badge.textContent = "DEMO DATA";
+    footer.append(badge);
+  }
+  host.append(slot, footer);
+  return { host, slot };
+}
+
+async function renderCard(targetId: string, card: CardKind, demo: boolean): Promise<CardImage> {
+  const target = document.getElementById(targetId);
+  if (!target) throw new Error("card not found");
+  const { host, slot } = buildFrame(card, demo);
   const clone = target.cloneNode(true) as HTMLElement;
   clone.removeAttribute("id");
   clone.style.margin = "0"; // the image frame sets the spacing, not the card's on-page margin
-  slot.replaceChildren(clone);
-  await document.fonts.ready;
-  await Promise.all(Array.from(host.querySelectorAll("img")).map((img) => img.decode().catch(() => undefined)));
-  await nextFrame();
-  const r = host.getBoundingClientRect();
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(r.width * SCALE);
-  canvas.height = Math.round(r.height * SCALE);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("canvas unavailable");
-  ctx.scale(SCALE, SCALE);
-  ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, r.width, r.height);
-  await paintInto(ctx, host);
-  slot.replaceChildren();
-  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png"));
+  slot.append(clone);
+  document.body.append(host);
+  try {
+    await document.fonts.ready;
+    await Promise.all(Array.from(host.querySelectorAll("img")).map((img) => img.decode().catch(() => undefined)));
+    await nextFrame();
+    const r = host.getBoundingClientRect();
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(r.width * SCALE);
+    canvas.height = Math.round(r.height * SCALE);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("canvas unavailable");
+    ctx.scale(SCALE, SCALE);
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, r.width, r.height);
+    await paintInto(ctx, host);
+    const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png"));
+    return { blob, file: new File([blob], cardFilename(card), { type: "image/png" }) };
+  } finally {
+    host.remove();
+  }
 }
 
 const blobToDataUrl = (blob: Blob) =>
@@ -61,174 +101,203 @@ const blobToDataUrl = (blob: Blob) =>
     fr.readAsDataURL(blob);
   });
 
+const MSG = {
+  creating: "이미지를 만드는 중이에요…",
+  createFailed: "이미지를 만들지 못했어요. 다시 눌러 주세요.",
+  downloadStarted: "다운로드를 시작했어요. 다운로드 폴더나 갤러리에서 확인해 주세요.",
+  downloadFailed: "다운로드하지 못했어요. 다시 눌러 주세요.",
+  shared: "공유 창에서 선택한 작업을 마쳤어요. 사진 앱에 저장됐는지는 사진 앱에서 확인해 주세요.",
+  longPress: "이미지를 길게 눌러 저장하세요.",
+  inAppNote: "앱 안의 브라우저에서는 다운로드가 되지 않을 수 있어요.",
+  shareFallbackNote: "공유 창을 열지 못했어요. 이미지를 길게 눌러 '사진에 저장'을 선택하세요.",
+};
+
 export function CardShare({ targetId, card, demo = false }: { targetId: string; card: CardKind; demo?: boolean }) {
-  const [open, setOpen] = useState(false);
-  const [phase, setPhase] = useState<"creating" | "ready" | "error">("creating");
-  const [ready, setReady] = useState<Ready | null>(null);
+  const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
-  const host = useRef<HTMLDivElement>(null);
-  const slot = useRef<HTMLDivElement>(null);
+  const [sheet, setSheet] = useState<Sheet | null>(null);
+  const [sheetCreating, setSheetCreating] = useState(false);
+  const [sheetError, setSheetError] = useState(false);
+  const prepared = useRef<CardImage | null>(null);
   const closeBtn = useRef<HTMLButtonElement>(null);
 
   const report = useCallback((method: ShareMethod, result: ShareResult) => track("card_share_result", { card, method, result }), [card]);
+  const create = useCallback(() => withTimeout(renderCard(targetId, card, demo)), [targetId, card, demo]);
 
-  const create = useCallback(async () => {
-    setPhase("creating");
-    setStatus(null);
-    try {
-      const target = document.getElementById(targetId);
-      if (!target || !host.current || !slot.current) throw new Error("card not found");
-      const blob = await withTimeout(renderCard(target, host.current, slot.current));
-      const inApp = isInAppBrowser(navigator.userAgent);
-      const file = new File([blob], cardFilename(card), { type: "image/png" });
-      const url = inApp ? await blobToDataUrl(blob) : URL.createObjectURL(blob);
-      setReady({ blob, file, url, shareable: canShareFile(file), inApp });
-      setPhase("ready");
-      track("card_image_create", { card });
-      if (inApp) report("longpress", "guide_shown");
-    } catch (e) {
-      console.warn("[card image]", e instanceof Error ? e.message : e); // diagnostics only; the user sees the retry block
-      setPhase("error");
-      report("create", "failed");
-    }
-  }, [targetId, card, report]);
+  // iPhone only: keep a ready-made PNG of the card as it is now, so the share sheet can open right on the tap.
+  useEffect(() => {
+    if (saveTarget(navigator.userAgent) !== "share") return;
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let alive = true;
+    const schedule = () => {
+      prepared.current = null;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        create().then(
+          (img) => alive && (prepared.current = img),
+          () => undefined, // the tap will try again and report a failure if it happens then
+        );
+      }, PREPARE_DELAY_MS);
+    };
+    schedule();
+    const mo = new MutationObserver(schedule); // card content changed → the prepared image is stale
+    mo.observe(target, { subtree: true, childList: true, characterData: true, attributes: true });
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+      mo.disconnect();
+    };
+  }, [targetId, create]);
 
-  const close = useCallback(() => {
-    setOpen(false);
-    setReady((r) => {
-      if (r?.url.startsWith("blob:")) URL.revokeObjectURL(r.url);
-      return null;
-    });
+  const openSheet = useCallback(async (img: CardImage, note: string, inApp: boolean) => {
+    setSheet({ url: await blobToDataUrl(img.blob), file: img.file, shareable: inApp && canShareFile(img.file), note });
+    report("longpress", "guide_shown");
+  }, [report]);
+
+  const closeSheet = useCallback(() => {
+    setSheet(null);
+    setSheetCreating(false);
+    setSheetError(false);
   }, []);
 
-  // start rendering once the offscreen host is mounted
-  useEffect(() => {
-    if (open) void create();
-  }, [open, create]);
+  /** In-app browsers: open the preview right away and fill it once the image is ready. */
+  const openInApp = useCallback(async () => {
+    setSheetError(false);
+    setSheetCreating(true);
+    setSheet({ url: "", file: new File([], ""), shareable: false, note: MSG.inAppNote });
+    try {
+      const img = await create();
+      track("card_image_create", { card });
+      await openSheet(img, MSG.inAppNote, true);
+    } catch {
+      setSheetError(true);
+      report("create", "failed");
+    } finally {
+      setSheetCreating(false);
+    }
+  }, [create, card, openSheet, report]);
+
+  async function onSave() {
+    if (busy) return;
+    setStatus(null);
+    if (isInAppBrowser(navigator.userAgent)) return void openInApp();
+
+    let img = prepared.current;
+    if (!img) {
+      setBusy(true);
+      try {
+        img = await create();
+      } catch (e) {
+        console.warn("[card image]", e instanceof Error ? e.message : e);
+        report("create", "failed");
+        setStatus(MSG.createFailed);
+        return;
+      } finally {
+        setBusy(false);
+      }
+    }
+    track("card_image_create", { card });
+
+    if (saveTarget(navigator.userAgent) === "share" && canShareFile(img.file)) {
+      const result = await shareFile(img.file);
+      report("share", result);
+      if (result === "shared") setStatus(MSG.shared);
+      else if (result === "failed") await openSheet(img, MSG.shareFallbackNote, false); // e.g. the tap "expired" while rendering
+      return; // cancelled: not an error, nothing to say
+    }
+    const result = startDownload(img.blob, img.file.name);
+    report("download", result);
+    setStatus(result === "started" ? MSG.downloadStarted : MSG.downloadFailed);
+  }
 
   useEffect(() => {
-    if (!open) return;
+    if (!sheet) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     closeBtn.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeSheet();
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
-  }, [open, close]);
+  }, [sheet, closeSheet]);
 
-  async function onShare() {
-    if (!ready) return;
-    const result = await shareFile(ready.file);
+  async function onSheetShare() {
+    if (!sheet) return;
+    const result = await shareFile(sheet.file);
     report("share", result);
-    setStatus(
-      result === "shared"
-        ? "공유를 완료했어요."
-        : result === "failed"
-          ? ready.inApp
-            ? "공유하지 못했어요. 이미지를 길게 눌러 저장해 주세요."
-            : "공유하지 못했어요. 이미지 저장을 이용해 주세요."
-          : null, // cancelled: not an error
-    );
-  }
-
-  function onDownload() {
-    if (!ready) return;
-    const result = startDownload(ready.blob, ready.file.name);
-    report("download", result);
-    setStatus(
-      result === "started"
-        ? "다운로드를 시작했어요. 사진 앱에 저장됐는지는 기기에서 확인해 주세요."
-        : "다운로드하지 못했어요. 이미지를 길게 눌러 저장해 주세요.",
-    );
+    if (result === "shared") setStatus(MSG.shared);
   }
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
-        className="flex h-[50px] w-full items-center justify-between border border-gm-line3 px-5 text-[16px] font-bold"
+        onClick={() => void onSave()}
+        disabled={busy}
+        aria-busy={busy}
+        className="flex h-[50px] w-full items-center justify-between border border-gm-line3 px-5 text-[16px] font-bold disabled:text-gm-g1"
       >
-        이미지 저장·공유
+        {busy ? MSG.creating : "이미지 저장"}
         <SaveIcon />
       </button>
+      {status && (
+        <p role="status" className="mt-2 mb-0 text-[14px] leading-[21px] break-keep text-gm-g1">
+          {status}
+        </p>
+      )}
 
-      {open && (
-        <>
-          {/* offscreen copy of the card at the design width, painted into the PNG */}
-          <div ref={host} aria-hidden="true" className="bg-gm-bg text-gm-tx" style={{ position: "fixed", left: -10000, top: 0, width: WIDTH }}>
-            <div ref={slot} className={card === "stats" ? "px-6 pt-6" : undefined} />
-            <div className="flex items-center gap-2.5 px-6 pt-5 pb-5">
-              <span className="font-[family-name:var(--font-bc)] text-[13px] font-extrabold tracking-[0.22em] text-gm-g2">GEARMATCH</span>
-              {demo && (
-                <span className="border border-gm-line3 px-1.5 py-px font-[family-name:var(--font-bl)] text-[10px] font-bold tracking-[0.12em] text-gm-g1">
-                  DEMO DATA
-                </span>
-              )}
+      {sheet && (
+        <div role="dialog" aria-modal="true" aria-label="카드 이미지 저장" className="fixed inset-0 z-[60] overflow-y-auto bg-gm-bg">
+          <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-6 pb-8">
+            <div className="flex h-14 items-center justify-between">
+              <span className="font-[family-name:var(--font-bl)] text-[13px] font-bold tracking-[0.14em] text-gm-g1">IMAGE PREVIEW</span>
+              <button ref={closeBtn} type="button" onClick={closeSheet} aria-label="닫기" className="-mr-3 grid size-11 place-items-center">
+                <CloseIcon />
+              </button>
             </div>
-          </div>
 
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="카드 이미지 저장·공유"
-            className="fixed inset-0 z-[60] overflow-y-auto bg-gm-bg"
-          >
-            <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-6 pb-8">
-              <div className="flex h-14 items-center justify-between">
-                <span className="font-[family-name:var(--font-bl)] text-[13px] font-bold tracking-[0.14em] text-gm-g1">IMAGE PREVIEW</span>
-                <button ref={closeBtn} type="button" onClick={close} aria-label="닫기" className="-mr-3 grid size-11 place-items-center">
-                  <CloseIcon />
+            {sheetCreating && (
+              <p className="mt-10 text-center text-[15px] text-gm-g1" role="status">
+                {MSG.creating}
+              </p>
+            )}
+
+            {sheetError && (
+              <div role="alert" className="mt-10 border-t border-gm-line py-[18px]">
+                <p className="m-0 text-[17px] font-bold">이미지를 만들지 못했어요.</p>
+                <p className="mt-1 mb-0 text-[15px] text-gm-g1">잠시 후 다시 시도해 주세요.</p>
+                <button type="button" onClick={() => void openInApp()} className="mt-5 flex h-[46px] w-[140px] items-center justify-center border border-gm-line3 text-[16px] font-bold">
+                  다시 시도
                 </button>
               </div>
+            )}
 
-              {phase === "creating" && <p className="mt-10 text-center text-[15px] text-gm-g1" role="status">이미지를 만드는 중이에요…</p>}
-
-              {phase === "error" && (
-                <div role="alert" className="mt-10 border-t border-gm-line py-[18px]">
-                  <p className="m-0 text-[17px] font-bold">이미지를 만들지 못했어요.</p>
-                  <p className="mt-1 mb-0 text-[15px] text-gm-g1">잠시 후 다시 시도해 주세요.</p>
-                  <button type="button" onClick={() => void create()} className="mt-5 flex h-[46px] w-[140px] items-center justify-center border border-gm-line3 text-[16px] font-bold">
-                    다시 시도
-                  </button>
-                </div>
-              )}
-
-              {phase === "ready" && ready && (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={ready.url} alt="저장할 카드 이미지 미리보기" className="block h-auto w-full border border-gm-line" />
-                  <p className="mt-3 mb-0 text-[14px] leading-[21px] text-gm-g1">이미지에 들어갈 내용을 확인한 뒤 공유하거나 저장하세요.</p>
-
-                  {ready.inApp && (
-                    <p className="mt-4 mb-0 border border-gm-line3 px-4 py-3 text-[15px] leading-[22px] font-semibold">
-                      이미지를 길게 눌러 저장하세요.
-                      <span className="mt-1 block text-[13px] font-normal text-gm-g1">앱 안의 브라우저에서는 다운로드가 되지 않을 수 있어요.</span>
-                    </p>
-                  )}
-
-                  <div className="mt-5 flex flex-col gap-3">
-                    {ready.shareable && <PrimaryButton onClick={() => void onShare()}>공유하기</PrimaryButton>}
-                    {!ready.inApp && (
-                      <button type="button" onClick={onDownload} className="flex h-[50px] w-full items-center justify-between border border-gm-line3 px-5 text-[16px] font-bold">
-                        이미지 저장
-                        <SaveIcon />
-                      </button>
-                    )}
+            {!sheetCreating && !sheetError && sheet.url && (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={sheet.url} alt="저장할 카드 이미지 미리보기" className="block h-auto w-full border border-gm-line" />
+                <p className="mt-4 mb-0 border border-gm-line3 px-4 py-3 text-[15px] leading-[22px] font-semibold">
+                  {MSG.longPress}
+                  <span className="mt-1 block text-[13px] font-normal text-gm-g1">{sheet.note}</span>
+                </p>
+                {sheet.shareable && (
+                  <div className="mt-5">
+                    <PrimaryButton onClick={() => void onSheetShare()}>공유하기</PrimaryButton>
                   </div>
-                  {status && (
-                    <p role="status" className="mt-4 mb-0 text-[14px] leading-[21px] text-gm-g1">
-                      {status}
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
+                )}
+                {status && (
+                  <p role="status" className="mt-4 mb-0 text-[14px] leading-[21px] text-gm-g1">
+                    {status}
+                  </p>
+                )}
+              </>
+            )}
           </div>
-        </>
+        </div>
       )}
     </>
   );
