@@ -6,6 +6,8 @@ import { computeStats, type Stats } from "@/lib/running/stats";
 import { formatDuration, formatKm, formatKmSigned, formatMonDay, formatMonYear, formatPace, paceSecPerKm, weekdayEn } from "@/lib/running/format";
 import type { RunRecord } from "@/lib/running/types";
 import { ArrowIcon, BackIcon, PlusIcon } from "@/components/ui/icons";
+import { CardShare } from "@/components/share/CardShare";
+import { DATA_MODE } from "@/lib/config";
 
 const Label = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => <span className={`gm-label block ${className}`}>{children}</span>;
 const Num = ({ children, size, className = "" }: { children: React.ReactNode; size: string; className?: string }) => (
@@ -72,7 +74,7 @@ export function StatsCardView({ runs, today }: { runs: RunRecord[]; today: strin
           <BackIcon />
           VIEW RUNNER
         </Link>
-        <section aria-label="Stats" className="mt-2 border border-gm-line bg-gm-field px-[18px] py-5">
+        <section id="stats-card" aria-label="Stats" className="mt-2 border border-gm-line bg-gm-field px-[18px] py-5">
           {empty ? (
             <EmptyStats />
           ) : (
@@ -146,6 +148,11 @@ export function StatsCardView({ runs, today }: { runs: RunRecord[]; today: strin
             </>
           )}
         </section>
+
+        <div className="mt-3">
+          {/* DEMO build (local, temporary data) → the image is marked DEMO DATA; real data → no mark */}
+          <CardShare targetId="stats-card" card="stats" demo={DATA_MODE === "demo"} />
+        </div>
 
         {empty ? (
           <Link href="/runs/new" className="mt-4 flex h-[60px] items-center justify-between bg-gm-lime px-5 text-[18px] font-extrabold text-gm-bg">

@@ -37,6 +37,19 @@ export const ArrowIcon = ({ size = 16, strokeWidth = 2 }: P) => (
   </svg>
 );
 
+/** "이미지 저장·공유" — arrow into a tray */
+export const SaveIcon = ({ size = 20, strokeWidth = 2 }: P) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="square" strokeLinejoin="miter">
+    <path d="M12 3.5v11M7 10l5 5 5-5M4 15.5v5h16v-5" />
+  </svg>
+);
+
+export const CloseIcon = ({ size = 20, strokeWidth = 2 }: P) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="square">
+    <path d="M5 5l14 14M19 5 5 19" />
+  </svg>
+);
+
 /** CURRENT MODE intensity bars */
 export const ModeBars = () => (
   <svg viewBox="0 0 14 10" width="14" height="10" aria-hidden="true">
