@@ -1,20 +1,33 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow, Barlow_Condensed, Noto_Sans_KR } from "next/font/google";
+import localFont from "next/font/local";
+import "./fonts/barlow-fallback.css";
+import "./fonts/noto-sans-kr.css"; // sets --font-noto-kr (Unicode-range slices — not expressible with next/font/local)
 import "./globals.css";
 
-const barlowCondensed = Barlow_Condensed({
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
+// Self-hosted (src/app/fonts/README.md): the same latin woff2 files Google Fonts served, preloaded as before.
+// Fallback metrics come from barlow-fallback.css (copied from the previous next/font/google output).
+const barlowCondensed = localFont({
+  src: [
+    { path: "./fonts/BarlowCondensed-500-latin.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/BarlowCondensed-600-latin.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/BarlowCondensed-700-latin.woff2", weight: "700", style: "normal" },
+    { path: "./fonts/BarlowCondensed-800-latin.woff2", weight: "800", style: "normal" },
+  ],
   variable: "--font-barlow-condensed",
   display: "swap",
+  adjustFontFallback: false,
+  fallback: ["Barlow Condensed Fallback"],
 });
-const barlow = Barlow({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-barlow", display: "swap" });
-const notoKr = Noto_Sans_KR({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-noto-kr",
+const barlow = localFont({
+  src: [
+    { path: "./fonts/Barlow-500-latin.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/Barlow-600-latin.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/Barlow-700-latin.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-barlow",
   display: "swap",
-  preload: false,
+  adjustFontFallback: false,
+  fallback: ["Barlow Fallback"],
 });
 
 export const metadata: Metadata = {
@@ -31,7 +44,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={`${barlowCondensed.variable} ${barlow.variable} ${notoKr.variable}`}>
+    <html lang="ko" className={`${barlowCondensed.variable} ${barlow.variable}`}>
       <body>{children}</body>
     </html>
   );
