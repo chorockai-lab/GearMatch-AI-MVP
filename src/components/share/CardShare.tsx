@@ -21,7 +21,15 @@ interface Ready {
   inApp: boolean;
 }
 
-const nextFrame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+const TIMEOUT_MS = 15_000;
+
+/** Two animation frames for layout — with a timer fallback, since browsers pause frames in hidden pages. */
+const nextFrame = () =>
+  Promise.race([new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))), new Promise((r) => setTimeout(r, 120))]);
+
+/** Never leave the user on "만드는 중": after TIMEOUT_MS the attempt fails and the retry block is shown. */
+const withTimeout = <T,>(p: Promise<T>) =>
+  Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timed out")), TIMEOUT_MS))]);
 
 async function renderCard(target: HTMLElement, host: HTMLElement, slot: HTMLElement): Promise<Blob> {
   const clone = target.cloneNode(true) as HTMLElement;
@@ -70,7 +78,7 @@ export function CardShare({ targetId, card, demo = false }: { targetId: string; 
     try {
       const target = document.getElementById(targetId);
       if (!target || !host.current || !slot.current) throw new Error("card not found");
-      const blob = await renderCard(target, host.current, slot.current);
+      const blob = await withTimeout(renderCard(target, host.current, slot.current));
       const inApp = isInAppBrowser(navigator.userAgent);
       const file = new File([blob], cardFilename(card), { type: "image/png" });
       const url = inApp ? await blobToDataUrl(blob) : URL.createObjectURL(blob);
