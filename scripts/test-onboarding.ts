@@ -2,6 +2,7 @@
 import { answersCode, entryPath, habitsComplete, identityFromAnswers, nextOnboardingPath } from "../src/lib/onboarding/repository";
 import { parseAnswerString } from "../src/lib/identity/scoring";
 import { EMPTY_PROFILE, EMPTY_STATE, type OnboardingState } from "../src/lib/onboarding/types";
+import { detectBrowser } from "../src/lib/qa/browser";
 
 let failures = 0;
 const check = (ok: boolean, msg: string) => {
@@ -37,6 +38,22 @@ check(
   identity.animal_type_v2 === "HAM" && identity.secondary_type_v2 === "HOR" && identity.test_schema_version === "animal-v2.0.0" && identity.scoring_version === "animal-score-0.1",
   "identity record fields (spec §4.5)",
 );
+
+// QA re-visit page (/dev/session): which browser the tester is in
+const UA = {
+  kakaoIos: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 KAKAOTALK 25.8.0",
+  kakaoAndroid: "Mozilla/5.0 (Linux; Android 14; SM-S921N Build/UP1A; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/130.0.0.0 Mobile Safari/537.36 KAKAOTALK/25.8.0 (INAPP)",
+  safari: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+  iosChrome: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/130.0.0.0 Mobile/15E148 Safari/604.1",
+  androidChrome: "Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
+  androidWebView: "Mozilla/5.0 (Linux; Android 14; K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/130.0.0.0 Mobile Safari/537.36",
+  samsung: "Mozilla/5.0 (Linux; Android 14; SM-S921N) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/26.0 Chrome/122.0.0.0 Mobile Safari/537.36",
+  desktop: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+};
+check(detectBrowser(UA.kakaoIos) === "kakaotalk-inapp" && detectBrowser(UA.kakaoAndroid) === "kakaotalk-inapp", "KakaoTalk in-app (iOS / Android)");
+check(detectBrowser(UA.safari) === "ios-safari" && detectBrowser(UA.iosChrome) === "ios-chrome", "iPhone Safari vs Chrome");
+check(detectBrowser(UA.androidChrome) === "android-chrome" && detectBrowser(UA.samsung) === "samsung-internet", "Android Chrome vs Samsung Internet");
+check(detectBrowser(UA.androidWebView) === "other-inapp" && detectBrowser(UA.desktop) === "desktop", "other app WebView / desktop");
 
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);
