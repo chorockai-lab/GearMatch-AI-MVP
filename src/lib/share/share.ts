@@ -14,6 +14,16 @@ export function isInAppBrowser(ua: string): boolean {
   return kind === "kakaotalk-inapp" || kind === "other-inapp";
 }
 
+/**
+ * What "이미지 저장" does in this browser: iPhone (Safari / Chrome) → system share sheet, whose "이미지 저장" puts the
+ * PNG in Photos (a download would only reach the Files app) · in-app browsers → preview + long-press ·
+ * everything else (Android Chrome, desktop) → direct download.
+ */
+export function saveTarget(ua: string): "share" | "download" | "longpress" {
+  if (isInAppBrowser(ua)) return "longpress";
+  return /iPhone|iPad|iPod/.test(ua) ? "share" : "download";
+}
+
 export function canShareFile(file: File): boolean {
   try {
     return typeof navigator.canShare === "function" && navigator.canShare({ files: [file] });
