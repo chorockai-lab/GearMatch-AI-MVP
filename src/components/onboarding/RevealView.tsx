@@ -124,7 +124,8 @@ export function RevealView({ mode }: { mode: "onboarding" | "review" }) {
           background: "linear-gradient(180deg, rgba(10,10,10,0) 0, #0A0A0A 28px)",
         }}
       >
-        {mode === "onboarding" ? (
+        {/* a retake (QA landing preview) by someone who already finished onboarding goes straight back to RUNNING */}
+        {mode === "onboarding" && !state.completed_at ? (
           <>
             <PrimaryLink href="/onboarding/habits">내 Runner 완성하기</PrimaryLink>
             <p className="mt-3 mb-0 text-center text-[13px] text-gm-g2">다음 · 러닝 정보와 지금 신는 신발을 알려주세요</p>
