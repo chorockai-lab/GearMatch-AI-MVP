@@ -57,13 +57,16 @@ export function PrimaryButton({ children, disabled, onClick, type = "button" }: 
   );
 }
 
-/** `centered`: label centred, arrow kept at the right edge (Landing). Default layout is unchanged. */
+/**
+ * `centered`: label centred, arrow kept at the right edge (Landing). Default layout is unchanged.
+ * Below 360px the label is 1px smaller and the arrow 4px further out, so they never crowd each other.
+ */
 export function PrimaryLink({ href, children, centered = false }: { href: string; children: React.ReactNode; centered?: boolean }) {
   if (centered) {
     return (
-      <Link href={href} className={`${ctaBase} relative !justify-center bg-gm-lime text-gm-bg`}>
+      <Link href={href} className={`${ctaBase} relative !justify-center bg-gm-lime text-gm-bg max-[359px]:text-[17px]`}>
         {children}
-        <span className="absolute right-5 flex">
+        <span className="absolute right-5 flex max-[359px]:right-4">
           <ArrowIcon size={22} />
         </span>
       </Link>
