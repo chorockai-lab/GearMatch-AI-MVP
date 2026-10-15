@@ -134,3 +134,12 @@ export function nextOnboardingPath(s: OnboardingState): string {
   if (!s.completed_at) return "/onboarding/shoe";
   return "/running";
 }
+
+/**
+ * Where `/` should send a returning visitor: null = show the Landing (nothing started yet),
+ * otherwise the RUNNING home (onboarding complete) or the step they stopped at.
+ */
+export function entryPath(s: OnboardingState): string | null {
+  const started = Object.keys(s.answers).length > 0 || s.identity !== null || s.completed_at !== null;
+  return started ? nextOnboardingPath(s) : null;
+}

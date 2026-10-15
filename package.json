@@ -22,7 +22,8 @@
     "items:import": "tsx scripts/items/import.ts",
     "items:demo": "tsx scripts/items/generate-demo.ts",
     "test:items": "tsx scripts/test-items.ts",
-    "test:analytics": "tsx scripts/test-analytics.ts",
+    "test:analytics": "tsx scripts/test-analytics.ts && tsx scripts/test-dashboards.mts",
+    "posthog:check": "node scripts/posthog/check-dashboards.mjs",
     "posthog:dashboard": "node scripts/posthog/create-dashboard.mjs"
   },
   "dependencies": {
@@ -39,6 +40,7 @@
     "@types/node": "^22.18.0",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
+    "ajv": "^8.17.1",
     "eslint": "^9.39.5",
     "eslint-config-next": "15.5.x",
     "exceljs": "^4.4.0",
