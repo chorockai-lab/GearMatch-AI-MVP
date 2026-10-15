@@ -23,13 +23,13 @@ function LandingScreen() {
         <LandingScene />
       </div>
 
-      {/* copy + CTA as one centred group under the picture. Spare height on tall screens is split 1 : 2
-          above / below the group (no big gap in the middle, CTA stays in the upper part of the thumb zone). */}
+      {/* copy + CTA as one centred group under the picture. On tall screens at most 32px of the spare height goes
+          above the group (no big gap in the middle); the rest stays below the CTA. */}
       <section
         className="flex flex-1 flex-col px-6 text-center"
         style={{ paddingTop: "clamp(24px, 4.5svh, 44px)", paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
       >
-        <div aria-hidden="true" className="flex-[1]" />
+        <div aria-hidden="true" className="max-h-8 flex-1" />
         <h1 className="m-0 text-[clamp(28px,8.4vw,34px)] leading-[1.3] font-extrabold tracking-[-0.02em] break-keep">
           내 안에 숨어 있는
           <br />
@@ -46,7 +46,7 @@ function LandingScreen() {
             숨은 러닝 동물 발견하기
           </PrimaryLink>
         </div>
-        <div aria-hidden="true" className="flex-[2]" />
+        <div aria-hidden="true" className="flex-[3]" />
       </section>
     </FlowFrame>
   );
