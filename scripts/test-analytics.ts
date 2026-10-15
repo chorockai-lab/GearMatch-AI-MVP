@@ -69,7 +69,8 @@ const used = new Set<string>();
 for (const f of files) {
   const src = readFileSync(f, "utf8");
   for (const m of src.matchAll(/(?:track|useTrackOnce)\(\s*"[a-z_]+"\s*,\s*\{([^}]*)\}/g)) {
-    for (const k of m[1].matchAll(/([a-z_]+)\s*:/g)) used.add(k[1]);
+    // keys at the start or after a comma: `key: value` and shorthand `{ card, method }`
+    for (const k of m[1].matchAll(/(?:^|,)\s*([a-z_]+)\s*(?=[:,]|\s*$)/g)) used.add(k[1]);
   }
 }
 const missing = [...used].filter((k) => !ALLOWED_PROPS.has(k));

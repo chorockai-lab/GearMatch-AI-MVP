@@ -6,6 +6,7 @@ import { AppFrame, AppHeader, BottomNav } from "@/components/ui/AppChrome";
 import { PlusIcon } from "@/components/ui/icons";
 import { RunnerCard } from "./RunnerCard";
 import { RecentRuns } from "./RecentRuns";
+import { CardShare } from "@/components/share/CardShare";
 
 export function RunningMainView({ data, today }: { data: RunningMainData; today: string }) {
   const card = deriveCardState(data.runs, data.milestones, today);
@@ -20,6 +21,9 @@ export function RunningMainView({ data, today }: { data: RunningMainData; today:
         currentMode={data.currentMode}
         currentShoe={data.currentShoe}
       />
+      <div className="px-6 pt-4">
+        <CardShare targetId="runner-card" card="runner" demo={data.dataMode === "demo"} />
+      </div>
       <div className="px-6 pt-[22px]">
         <Link
           href="/runs/new"

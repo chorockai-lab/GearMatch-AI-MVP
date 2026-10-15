@@ -12,6 +12,24 @@
 | 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 완료 (main, PR #8 · 실제 Supabase 검증) |
 | 5 | QA & Deployment — 전체 QA · Vercel 내부 배포 | 준비 완료 — 체크리스트 `docs/STEP5_QA_DEPLOY.md` |
 
+## Issue #16 카드 이미지 저장·공유 (브랜치 `feat/step5-card-share` · 2026-10-15)
+
+| 항목 | 내용 · 검증 |
+|---|---|
+| 버튼 | RUNNING Runner Card 아래 · Stats Card 아래 `이미지 저장·공유`(테두리 보조 버튼). 기존 CTA 유지 |
+| 생성 | 브라우저 Canvas. 화면의 카드를 390px 디자인 폭으로 복제해 글자 위치·글꼴·색·테두리를 그대로 옮기고, 픽셀 PNG는 정수 배율·nearest-neighbor로 그림. 3배(1170px 폭) PNG + 아래 작은 `GEARMATCH`, DEMO 화면이면 `DEMO DATA` 표기. 서버 전송 없음 |
+| 화면과 일치 | 같은 카드의 3배 화면 캡처와 픽셀 비교: 8개 경우 모두 눈에 띄게 다른 픽셀 0.2~1.5% (글자 가장자리 안티앨리어싱 차이) |
+| 기기 폭 | 320px·390px에서 만든 PNG가 바이트 단위로 동일 |
+| 흐름 | 미리보기 → 파일 공유 지원 시 `공유하기` / 미지원 시 `이미지 저장`(다운로드 시작 — 사진 앱 저장 완료와 구분해 안내) / 카카오톡 등 인앱은 길게 눌러 저장 안내 / 실패 시 다시 시도. 공유 취소는 오류로 표시 안 함 |
+| 이벤트 | `card_image_create` {card}, `card_share_result` {card, method, result} (총 24종). 신발명·이미지 내용 미전송 |
+| 화면 수정 | RUN 카드 SHOE 행: 긴 신발명이 `SHOE`에 붙어 줄바꿈되던 문제 → 한 줄 말줄임(Stats 카드와 같은 규칙). CURRENT SHOE: 한글 단어 중간 줄바꿈 방지 |
+| 미검증 | 실기기 iPhone Safari·Android Chrome·카카오톡 인앱의 실제 공유 시트·사진 저장 (#12) |
+
+## Production 확인 (2026-10-15, PR #20·#21 병합 후)
+
+랜딩 확정 이미지·C안 카피 · 테스트 시작 → `/test/1` · 재방문 → `/running` · `/dev/session` 404 · Supabase 데이터 유지(QA 사용자 러닝 1건 저장 후 재방문 표시) · PostHog 모드 `qa` — 모두 확인.
+참고: 07:26~07:28 UTC 캡처 중 `?qa=1` 없는 Production 방문 1~3건이 Supabase에 남았을 수 있음(분석 시 제외).
+
 ## 랜딩 히어로 — 확정 원본 이미지 적용 (브랜치 `feat/landing-night-hero` · 2026-10-15)
 
 | 항목 | 내용 |

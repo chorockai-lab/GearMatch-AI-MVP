@@ -3,6 +3,7 @@ import { answersCode, entryPath, habitsComplete, identityFromAnswers, nextOnboar
 import { parseAnswerString } from "../src/lib/identity/scoring";
 import { EMPTY_PROFILE, EMPTY_STATE, type OnboardingState } from "../src/lib/onboarding/types";
 import { detectBrowser } from "../src/lib/qa/browser";
+import { cardFilename, isInAppBrowser } from "../src/lib/share/share";
 
 let failures = 0;
 const check = (ok: boolean, msg: string) => {
@@ -54,6 +55,11 @@ check(detectBrowser(UA.kakaoIos) === "kakaotalk-inapp" && detectBrowser(UA.kakao
 check(detectBrowser(UA.safari) === "ios-safari" && detectBrowser(UA.iosChrome) === "ios-chrome", "iPhone Safari vs Chrome");
 check(detectBrowser(UA.androidChrome) === "android-chrome" && detectBrowser(UA.samsung) === "samsung-internet", "Android Chrome vs Samsung Internet");
 check(detectBrowser(UA.androidWebView) === "other-inapp" && detectBrowser(UA.desktop) === "desktop", "other app WebView / desktop");
+
+// card image (Issue #16): in-app browsers get the long-press guide instead of a download button
+check(isInAppBrowser(UA.kakaoIos) && isInAppBrowser(UA.kakaoAndroid) && isInAppBrowser(UA.androidWebView), "in-app browsers → long-press saving");
+check(!isInAppBrowser(UA.safari) && !isInAppBrowser(UA.androidChrome) && !isInAppBrowser(UA.samsung), "regular browsers → share / download");
+check(cardFilename("runner", new Date(2026, 9, 5)) === "gearmatch-runner-card-20261005.png" && cardFilename("stats", new Date(2026, 11, 31)) === "gearmatch-stats-card-20261231.png", "card PNG file name");
 
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);

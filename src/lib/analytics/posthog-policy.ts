@@ -47,6 +47,9 @@ export const ALLOWED_PROPS = new Set([
   "runners",
   "product_id", // catalogue code (e.g. GM-NK-PEGASUS-42), not the user's typed shoe
   "from",
+  "card", // runner | stats (card image)
+  "method", // create | share | download | longpress
+  "result", // shared | cancelled | failed | started | guide_shown
 ]);
 const BOOLEAN_ONLY = new Set(["height", "weight", "foot", "qa", "mixed_signal", "is_today"]);
 const MAX_STRING = 64;

@@ -6,7 +6,7 @@ Supabase `events`(원본 기록)는 그대로 두고, **같은 제품 이벤트�
 
 | 항목 | 내용 |
 |---|---|
-| 보내는 이벤트 | `src/lib/events/track.ts`의 22종 — Supabase에 한 줄 쓸 때 같은 호출에서 PostHog로 1건 (중복 없음) |
+| 보내는 이벤트 | `src/lib/events/track.ts`의 24종(2026-10-15 카드 이미지 2종 추가) — Supabase에 한 줄 쓸 때 같은 호출에서 PostHog로 1건 (중복 없음) |
 | 사용자 식별 | PostHog `distinct_id` = Supabase 익명 사용자 ID (`identify`) → 두 시스템에서 같은 사람 |
 | 끈 기능 | Autocapture · 자동 Pageview/Pageleave · Session Replay · Heatmap · Dead click · Rage click · Web vitals · 예외 수집 · Surveys · Feature flags |
 | 보내지 않는 것 | 키·체중·발 사이즈 값(입력 여부 true/false만), 테스트 답변 문구, 자유 입력, 사용자가 입력한 신발 이름, 주소의 `?쿼리`·`#조각`, 유입 경로(referrer) |

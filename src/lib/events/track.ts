@@ -32,6 +32,8 @@ export const EVENT_NAMES = [
   "shoe_detail_view", // props: { product_id, range, from }
   "shoe_save", // props: { product_id, from }
   "shoe_unsave", // props: { product_id, from }
+  "card_image_create", // props: { card: runner | stats } — a card PNG was generated (Issue #16)
+  "card_share_result", // props: { card, method: create | share | download | longpress, result } — what really happened
 ] as const;
 export type EventName = (typeof EVENT_NAMES)[number];
 

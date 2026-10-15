@@ -31,7 +31,7 @@ export function RunnerCard({ animal, state, run, milestone, currentMode, current
   const a = ANIMALS[animal];
   const shoeText = currentShoe ?? "—";
   return (
-    <section aria-label="My Runner">
+    <section id="runner-card" aria-label="My Runner">
       <RunnerScene animal={animal} state={state} />
 
       <div className="flex items-center justify-between pt-[14px] pr-3 pl-6">
@@ -66,7 +66,7 @@ export function RunnerCard({ animal, state, run, milestone, currentMode, current
           </div>
           <div>
             <span className="gm-label">CURRENT SHOE</span>
-            <span className="mt-1.5 block text-[16px] leading-[22px] font-semibold">{shoeText}</span>
+            <span className="mt-1.5 block text-[16px] leading-[22px] font-semibold break-keep">{shoeText}</span>
           </div>
         </div>
       )}
@@ -93,9 +93,10 @@ export function RunnerCard({ animal, state, run, milestone, currentMode, current
             <Cell label="TIME" value={formatDuration(run.durationSec)} />
             <Cell label="DATE" value={`${splitDate(run.runDate).mon} ${splitDate(run.runDate).day}`} />
           </div>
-          <div className="mt-3 flex items-center justify-between">
-            <span className="gm-label">SHOE</span>
-            <span className="text-[15px] font-semibold">{run.shoe ?? "—"}</span>
+          <div className="mt-3 flex items-center justify-between gap-4">
+            <span className="gm-label flex-none">SHOE</span>
+            {/* long names: one line + ellipsis (same rule as MOST USED SHOE on the Stats card) */}
+            <span className="min-w-0 truncate text-[15px] font-semibold">{run.shoe ?? "—"}</span>
           </div>
         </div>
       )}
