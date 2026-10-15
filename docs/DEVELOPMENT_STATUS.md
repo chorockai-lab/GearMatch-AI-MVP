@@ -16,7 +16,7 @@
 
 | 작업 | 상태 | 근거 |
 |---|---|---|
-| PostHog 대시보드 정의 — `GearMatch MVP KPI`(7개, QA 제외) · `GearMatch QA Monitor`(4개, QA만) | 정의·호환성 검증 완료 · **생성은 미실행**(Personal API key 필요) | `npm run posthog:check` 17건 통과(PostHog 공개 API 스키마·최신 쿼리 스키마), `test:analytics` 대시보드 검사 7건 |
+| PostHog 대시보드 정의 — `GearMatch MVP KPI`(7개, QA 제외) · `GearMatch QA Monitor`(4개, QA만) | **생성 완료 (2026-10-15, 대시보드 2 · 차트 11)** — [KPI](https://us.posthog.com/project/662151/dashboard/2213495) · [QA Monitor](https://us.posthog.com/project/662151/dashboard/2213496) | `npm run posthog:check` 17건 통과(PostHog 공개 API 스키마·최신 쿼리 스키마), `test:analytics` 대시보드 검사 7건 |
 | 재방문 진입 — `/`에서 저장된 상태 확인 후 RUNNING / 남은 단계 / Landing | 구현·검증 | `test:onboarding` entryPath 8건, 로컬 서버 모드·DEMO·Preview 브라우저 확인 (`docs/QA_REVISIT.md`) |
 | 재접속 QA 도구 `/dev/session` (QA 전용) | 구현·Preview 확인 | 같은 브라우저: ID·동물·기록·Saved·PostHog ID 유지 / 저장 정보 삭제: 새 사용자(정상 제약) |
 | 카카오톡·다른 브라우저 실기기 시나리오 | **미검증** (실기기 필요) | 절차·예상 동작: `docs/QA_REVISIT.md` · Issue #12 |
@@ -185,7 +185,7 @@ QA 세션(`?qa=1`)·`test:rls`·`check:supabase`로 생긴 사용자/이벤트�
 ## 남은 검증 항목
 
 - 실제 휴대폰(iOS Safari·Android Chrome) 전체 흐름
-- PostHog 대시보드 2개 생성 실행 및 차트 확인 — Personal API key 필요
+- PostHog 대시보드 차트 화면 확인(생성은 완료) — KPI는 수집 모드 `qa`라 비어 있는 것이 정상
 - Production에서 RUNNING 이후 흐름(기록 저장·Stats·ITEMS)의 PostHog 수집 — 이번엔 RUNNING 진입까지만 확인
 
 확인됨(2026-10-14): `.claude/skills` 3개 인식 · Vercel Preview/Production 서버 모드 빌드(익명 로그인·Supabase 기록·PostHog QA 수집)

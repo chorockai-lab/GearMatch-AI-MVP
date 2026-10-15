@@ -47,7 +47,8 @@ Supabase `events`(원본 기록)는 그대로 두고, **같은 제품 이벤트�
 
 1. **호환성 확인 (키 불필요)**: `npm run posthog:check` — PostHog 공개 API 스키마에서 대시보드·인사이트 경로와 권한, 최신 쿼리 스키마로 11개 차트 정의를 검사합니다. 통과해야 2로 진행.
 2. PostHog → 좌측 아래 프로필 → **Personal API keys** → 새 키(Scopes: `dashboard:write`, `insight:write`, 프로젝트 GearMatch만)
-3. 키 넣기 — 둘 중 하나 (Git에 올라가지 않음)
+3. 키 넣기 — 셋 중 하나 (Git에 올라가지 않음)
+   - **권장**: `powershell -NoProfile -ExecutionPolicy Bypass -File scriptsposthogun-dashboard.ps1` — 호환성 확인 후 가려진 입력칸에 키를 붙여넣음. 키는 그 실행 과정의 메모리에만 있고 끝나면 지움(화면·명령 기록·파일에 남지 않음). 형식이 틀리면 아무것도 보내지 않고 다시 물음
    - `.env.local`에 `POSTHOG_PERSONAL_API_KEY=phx_…` 한 줄 추가 → `npm run posthog:dashboard` (Claude가 대신 실행 가능, 키는 출력하지 않음)
    - 또는 본인 터미널에서:
 
@@ -61,6 +62,10 @@ Remove-Item Env:POSTHOG_PERSONAL_API_KEY
 
 키는 출력·저장되지 않습니다. 다시 실행해도 같은 이름의 대시보드·차트는 그대로 둡니다.
 **현재 수집 모드가 `qa`라서 KPI 대시보드(QA 제외)는 실제 사용자 데이터가 없어 비어 있는 것이 정상**입니다. QA Monitor에는 `?qa=1` 세션만 보입니다.
+
+생성 결과 (2026-10-15, 11개 모두 생성):
+- GearMatch MVP KPI — https://us.posthog.com/project/662151/dashboard/2213495
+- GearMatch QA Monitor — https://us.posthog.com/project/662151/dashboard/2213496
 
 ### GearMatch MVP KPI
 
