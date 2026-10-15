@@ -7,6 +7,7 @@ import { formatDuration, formatKm, formatKmSigned, formatMonDay, formatMonYear, 
 import type { RunRecord } from "@/lib/running/types";
 import { ArrowIcon, BackIcon, PlusIcon } from "@/components/ui/icons";
 import { CardShare } from "@/components/share/CardShare";
+import { DATA_MODE } from "@/lib/config";
 
 const Label = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => <span className={`gm-label block ${className}`}>{children}</span>;
 const Num = ({ children, size, className = "" }: { children: React.ReactNode; size: string; className?: string }) => (
@@ -149,7 +150,8 @@ export function StatsCardView({ runs, today }: { runs: RunRecord[]; today: strin
         </section>
 
         <div className="mt-3">
-          <CardShare targetId="stats-card" card="stats" />
+          {/* DEMO build (local, temporary data) → the image is marked DEMO DATA; real data → no mark */}
+          <CardShare targetId="stats-card" card="stats" demo={DATA_MODE === "demo"} />
         </div>
 
         {empty ? (

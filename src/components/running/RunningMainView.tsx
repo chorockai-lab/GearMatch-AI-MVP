@@ -7,6 +7,7 @@ import { PlusIcon } from "@/components/ui/icons";
 import { RunnerCard } from "./RunnerCard";
 import { RecentRuns } from "./RecentRuns";
 import { CardShare } from "@/components/share/CardShare";
+import { DATA_MODE } from "@/lib/config";
 
 export function RunningMainView({ data, today }: { data: RunningMainData; today: string }) {
   const card = deriveCardState(data.runs, data.milestones, today);
@@ -22,7 +23,8 @@ export function RunningMainView({ data, today }: { data: RunningMainData; today:
         currentShoe={data.currentShoe}
       />
       <div className="px-6 pt-4">
-        <CardShare targetId="runner-card" card="runner" demo={data.dataMode === "demo"} />
+        {/* DEMO preview data or a DEMO build → the image is marked DEMO DATA; real data → no mark */}
+        <CardShare targetId="runner-card" card="runner" demo={data.dataMode === "demo" || DATA_MODE === "demo"} />
       </div>
       <div className="px-6 pt-[22px]">
         <Link
