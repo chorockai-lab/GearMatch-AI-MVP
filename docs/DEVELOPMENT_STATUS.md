@@ -10,9 +10,16 @@
 | 2 | Onboarding — Landing → Test → Reveal → Profile 1/2 → Shoe → RUNNING | 완료 (main, PR #6) |
 | 3 | Running & Stats — Supabase · Run CRUD · History · Stats · 이벤트 | 완료 (main, PR #7) |
 | 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 완료 (main, PR #8 · 실제 Supabase 검증) |
-| 5 | QA & Deployment — 전체 QA · Vercel 내부 배포 | 준비 완료 — 체크리스트 `docs/STEP5_QA_DEPLOY.md` |
+| 5 | QA & Deployment — 전체 QA · Vercel 내부 배포 | 진행 중 — Production 배포·자동 검증 완료, **실기기 QA 대기**(`docs/QA_DEVICE_CHECKLIST.md`, #12) |
 
-## Issue #16 카드 이미지 저장·공유 (브랜치 `feat/step5-card-share` · 2026-10-15)
+## 실기기 QA (Issue #12) — 준비 완료, 실행 대기
+
+- 절차·기록표: `docs/QA_DEVICE_CHECKLIST.md` (iPhone Safari · Android Chrome · 카카오톡 인앱, 항목별 정상/오류/미검증)
+- 범위: 첫 방문 · 온보딩 · 재방문 · 러닝 기록(수정·삭제) · Stats · Runner/Stats 이미지 생성·공유·사진 저장 · ITEMS 저장 · 320/375/390 레이아웃
+- 브라우저 간 익명 세션 분리(Safari ↔ 카카오톡 인앱 ↔ Chrome, 다른 기기, 데이터 삭제)는 **기존 한계**로 따로 기록 — 계정 연결(#13) 전까지 정상 동작
+- 외부 사용자 테스트 중단 기준(치명적 오류 6가지)과 완료 기준은 체크리스트 §3
+
+## Issue #16 카드 이미지 저장·공유 (main, PR #22 · 2026-10-15 병합)
 
 | 항목 | 내용 · 검증 |
 |---|---|
@@ -23,11 +30,14 @@
 | 흐름 | 미리보기 → 파일 공유 지원 시 `공유하기` / 미지원 시 `이미지 저장`(다운로드 시작 — 사진 앱 저장 완료와 구분해 안내) / 카카오톡 등 인앱은 길게 눌러 저장 안내 / 실패 시 다시 시도. 공유 취소는 오류로 표시 안 함 |
 | 이벤트 | `card_image_create` {card}, `card_share_result` {card, method, result} (총 24종). 신발명·이미지 내용 미전송 |
 | 화면 수정 | RUN 카드 SHOE 행: 긴 신발명이 `SHOE`에 붙어 줄바꿈되던 문제 → 한 줄 말줄임(Stats 카드와 같은 규칙). CURRENT SHOE: 한글 단어 중간 줄바꿈 방지 |
-| 미검증 | 실기기 iPhone Safari·Android Chrome·카카오톡 인앱의 실제 공유 시트·사진 저장 (#12) |
+| Production 확인 (자동, QA 세션) | 실제 데이터로 Runner(처음·러닝 후)·Stats PNG 생성 → 미리보기 → `이미지 저장` 다운로드 파일 생성(91KB·155KB), DEMO 표기 없음 · Preview에서 이벤트 `card_image_create`·`card_share_result`(cancelled) 각 1건, `qa: true`, PostHog 200 |
+| 자동 검증 범위 | 헤드리스 Chrome(데스크톱 엔진): 공유 완료·취소·실패는 공유 기능을 흉내 내 확인, 카카오톡은 UA만 바꿔 확인 |
+| **미검증 (실기기 필요, #12)** | iPhone Safari 공유 시트 → 사진 앱 저장 · iPhone 다운로드(파일 앱) · Android Chrome 공유·다운로드·갤러리 · 카카오톡 인앱(iOS·Android) 길게 눌러 저장, 공유 버튼 동작 · 실기기 화면에서 이미지 선명도·한글 |
 
-## Production 확인 (2026-10-15, PR #20·#21 병합 후)
+## Production 확인 (2026-10-15, PR #20·#21·#22 병합 후)
 
 랜딩 확정 이미지·C안 카피 · 테스트 시작 → `/test/1` · 재방문 → `/running` · `/dev/session` 404 · Supabase 데이터 유지(QA 사용자 러닝 1건 저장 후 재방문 표시) · PostHog 모드 `qa` — 모두 확인.
+PR #22: 위 Issue #16 표의 "Production 확인" 행. 이 확인으로 QA 사용자 2명·러닝 1건 생성(08:40~08:42 UTC, 모두 QA 표시).
 참고: 07:26~07:28 UTC 캡처 중 `?qa=1` 없는 Production 방문 1~3건이 Supabase에 남았을 수 있음(분석 시 제외).
 
 ## 랜딩 히어로 — 확정 원본 이미지 적용 (브랜치 `feat/landing-night-hero` · 2026-10-15)
@@ -215,7 +225,7 @@ QA 세션(`?qa=1`)·`test:rls`·`check:supabase`로 생긴 사용자/이벤트�
 
 ## 남은 검증 항목
 
-- 실제 휴대폰(iOS Safari·Android Chrome) 전체 흐름
+- **실기기 QA 전체 (#12)** — `docs/QA_DEVICE_CHECKLIST.md`: iPhone Safari·Android Chrome·카카오톡 인앱의 전체 흐름, 카드 이미지 공유·사진 저장, 320폭
 - PostHog 대시보드 차트 화면 확인(생성은 완료) — KPI는 수집 모드 `qa`라 비어 있는 것이 정상
 - Production에서 RUNNING 이후 흐름(기록 저장·Stats·ITEMS)의 PostHog 수집 — 이번엔 RUNNING 진입까지만 확인
 
