@@ -1,12 +1,20 @@
 // Landing — UI handoff 01_LANDING/landing.png
+// Returning visitors go to RUNNING Main / their unfinished step instead (LandingGate checks the saved state first).
 import { LandingScene } from "@/components/onboarding/LandingScene";
+import { LandingGate } from "@/components/onboarding/LandingGate";
 import { FlowFrame, PrimaryLink } from "@/components/onboarding/Flow";
-import { TrackView } from "@/components/ui/TrackView";
 
 export default function Landing() {
   return (
+    <LandingGate>
+      <LandingScreen />
+    </LandingGate>
+  );
+}
+
+function LandingScreen() {
+  return (
     <FlowFrame>
-      <TrackView name="landing_view" />
       <header className="flex h-14 items-center justify-between px-6">
         <span className="font-[family-name:var(--font-bc)] text-[17px] font-extrabold tracking-[0.22em]">GEARMATCH</span>
         <span className="gm-label">RUNNING ANIMAL</span>

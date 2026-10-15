@@ -1,5 +1,5 @@
 // Onboarding guard rules (lib/onboarding/repository.ts pure helpers). Run: npm run test:onboarding
-import { answersCode, habitsComplete, identityFromAnswers, nextOnboardingPath } from "../src/lib/onboarding/repository";
+import { answersCode, entryPath, habitsComplete, identityFromAnswers, nextOnboardingPath } from "../src/lib/onboarding/repository";
 import { parseAnswerString } from "../src/lib/identity/scoring";
 import { EMPTY_PROFILE, EMPTY_STATE, type OnboardingState } from "../src/lib/onboarding/types";
 
@@ -22,6 +22,15 @@ check(nextOnboardingPath(s({ answers, identity })) === "/onboarding/habits", "re
 check(nextOnboardingPath(s({ answers, identity, profile: { ...habits, typical_run_distance: null } })) === "/onboarding/habits", "2/3 habits → habits");
 check(nextOnboardingPath(s({ answers, identity, profile: habits })) === "/onboarding/shoe", "habits done, not completed → shoe (step 2 is skippable)");
 check(nextOnboardingPath(s({ answers, identity, profile: habits, completed_at: "2026-10-13T00:00:00Z" })) === "/running", "completed → /running");
+// "/" for a returning visitor (server state loaded first)
+check(entryPath(EMPTY_STATE) === null, "entry: nothing started → Landing");
+check(entryPath(s({ profile: habits })) === null, "entry: profile values alone (no test) → Landing");
+check(entryPath(s({ answers: { Q1: "A", Q2: "C" } })) === "/test/3", "entry: test in progress → next question");
+check(entryPath(s({ answers })) === "/reveal", "entry: all answered, no result → Reveal");
+check(entryPath(s({ answers, identity })) === "/onboarding/habits", "entry: result, profile not done → habits");
+check(entryPath(s({ answers, identity, profile: habits })) === "/onboarding/shoe", "entry: habits done → shoe");
+check(entryPath(s({ answers, identity, profile: habits, completed_at: "2026-10-13T00:00:00Z" })) === "/running", "entry: onboarding complete → RUNNING");
+check(entryPath(s({ answers, identity: null, profile: habits, completed_at: "2026-10-13T00:00:00Z" })) === "/reveal", "entry: complete but result invalid (other scoring version) → re-evaluate");
 check(!habitsComplete({ ...habits, runs_per_week: null }) && habitsComplete(habits), "habitsComplete needs the 3 required fields only");
 check(answersCode(answers) === "AABAC" && identity.test_answers_v2 === "AABAC", "test_answers_v2 code");
 check(
