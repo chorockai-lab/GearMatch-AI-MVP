@@ -2,7 +2,7 @@
 // Shared ITEMS pieces — UI handoff 08_ITEMS.
 import { useCallback, useEffect, useState } from "react";
 import { itemsRepository, type SavedProduct } from "@/lib/items/repository";
-import type { MatchProfile, Range, RunnersLikeYou } from "@/lib/items/types";
+import type { ItemsMatch, MatchProfile } from "@/lib/items/types";
 import { BookmarkIcon } from "@/components/ui/icons";
 
 export const USE_LABEL: Record<string, string> = {
@@ -17,10 +17,11 @@ export const USE_LABEL: Record<string, string> = {
 /** usual-distance bucket → "5-10" KM (USUALLY) */
 export const DISTANCE_SHORT: Record<string, string> = { LT_3: "<3", D3_5: "3-5", D5_10: "5-10", GTE_10: "10+" };
 
-export function DemoBadge({ data = false }: { data?: boolean }) {
+/** Dashed badge for data that is not a real runner record: "예시 데이터" (DEMO-based examples). */
+export function DemoBadge({ text }: { text: string }) {
   return (
-    <span className="inline-flex h-6 items-center border border-dashed border-gm-line3 px-2 font-[family-name:var(--font-bl)] text-[11px] font-bold tracking-[0.16em] text-gm-g1">
-      {data ? "DEMO DATA" : "DEMO"}
+    <span className="inline-flex h-6 items-center border border-dashed border-gm-line3 px-2 text-[11px] font-bold tracking-[0.04em] text-gm-g1">
+      {text}
     </span>
   );
 }
@@ -54,9 +55,9 @@ export function SaveToggle({ saved, onToggle, busy, compact }: { saved: boolean;
   );
 }
 
-/** Runners Like You result for a range. `result` null while loading. */
-export function useRunnersLikeYou(range: Range, profile: MatchProfile | null) {
-  const [result, setResult] = useState<RunnersLikeYou | null>(null);
+/** items_match() result for the user's own profile. `result` null while loading. */
+export function useItemsMatch(profile: MatchProfile | null) {
+  const [result, setResult] = useState<ItemsMatch | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
   const key = JSON.stringify(profile);
@@ -64,14 +65,14 @@ export function useRunnersLikeYou(range: Range, profile: MatchProfile | null) {
     if (!profile) return;
     let alive = true;
     setResult(null);
-    itemsRepository.runnersLikeYou(range, JSON.parse(key)).then(
+    itemsRepository.itemsMatch(JSON.parse(key)).then(
       (r) => alive && setResult(r),
       (e) => alive && setError(e ?? new Error("load failed")),
     );
     return () => {
       alive = false;
     };
-  }, [range, key, attempt, profile]);
+  }, [key, attempt, profile]);
   const reload = useCallback(() => {
     setError(null);
     setAttempt((n) => n + 1);
