@@ -1,7 +1,7 @@
 # 앱 안 개인정보 삭제 ("내 데이터 삭제") — 보안 설계 · 적용 절차
 
 > 정책 P-2 (`docs/PRIVACY_NOTICE_DRAFT.md`). 브랜치 `feat/privacy-delete-my-data`, 2026-10-16.
-> **운영 Supabase 적용 · main 병합 · Production 배포는 별도 승인 후.**
+> 운영 Supabase 적용: **완료(2026-10-16, 사용자 실행)** — 실제 DB 검증 통과(§6). main 병합 · Production 배포는 별도 승인 후.
 
 ## 1. 방식 비교
 
@@ -66,3 +66,14 @@
 | 다른 브라우저 데이터 | 한 사람이 여러 브라우저를 썼다면 각각 그 브라우저에서 삭제해야 함 | 안내문 4번에 명시 |
 | 제공업체 로그·백업 | Supabase 백업, Vercel 접속 로그, PostHog(QA 데이터)는 이 기능으로 지워지지 않음 | 안내문에 보관 정책 별도 표기([확인 필요]) |
 | 오삭제 | 되돌릴 수 없음 | 확인 시트 + 호출자 본인만 삭제 가능 + 자동 테스트 |
+
+## 6. 실제 DB 검증 결과 (2026-10-16)
+
+| 항목 | 결과 |
+|---|---|
+| 적용 | 사용자가 SQL Editor에서 실행 — `Success. No rows returned`, 권한 확인 SQL 정상 |
+| 로그인 없는 호출 | 거부 (401 · `42501 permission denied for function delete_my_data`) |
+| `npm run test:delete` | 15개 통과 — 일회용 익명 사용자 A·B: B 삭제 후 B의 5개 표 0건·계정 없음, A 그대로, B의 옛 토큰 재호출 거부, A 삭제. 테스트 사용자 잔여 없음 → 운영 DB의 `auth.users` 삭제 권한 정상(방식 B 전환 불필요) |
+| Preview UI (`?qa=1`) | 새 QA 계정(`089c4d53…`)으로 온보딩(신체 정보 포함) → 기록 1건 → `/privacy` 삭제 → "데이터를 삭제했어요." · 로그인 세션·`gearmatch.*` 제거(QA 표시 유지) → `처음 화면으로` 시 랜딩 + 새 익명 사용자(`8c21b115…`) |
+| 다른 계정 보호 | 기존 Production QA 계정(고양이 · 기록 5.2km · 신발) 삭제 전후 모두 그대로 |
+| 남은 확인 | Preview UI 삭제 계정의 서버 행 0건은 화면 새로고침으로 옛 토큰을 잃어 직접 재확인하지 못함 — 같은 함수의 서버 확인은 `test:delete`로 완료. 필요하면 SQL Editor에서 `select count(*) from auth.users where id::text like '089c4d53%';` (0 기대) |
