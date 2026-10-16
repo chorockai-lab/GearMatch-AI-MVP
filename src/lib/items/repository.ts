@@ -1,11 +1,11 @@
 // ITEMS data access. Screens talk ONLY to `itemsRepository`.
-//   server: Supabase — products (read), runners_like_you() (aggregate only), saved_products (RLS own rows)
+//   server: Supabase — products (read), items_match() (aggregate / example / browse), saved_products (RLS own rows)
 //   local : DEMO dataset file only when NEXT_PUBLIC_ITEMS_DEMO=1 (local testing); otherwise an empty catalogue,
 //           so the screens show the real "not enough runners" states — never invented numbers.
 import { STORAGE_MODE } from "@/lib/config";
 import { ensureUserId, getSupabase } from "@/lib/supabase/client";
-import { runnersLikeYou as aggregate } from "./aggregate";
-import type { ItemsDataset, MatchProfile, Product, Range, RunnersLikeYou } from "./types";
+import { itemsMatch } from "./aggregate";
+import type { ItemsDataset, ItemsMatch, MatchProfile, Product } from "./types";
 
 /** Local DEMO switch — never on in server mode. The file is generated locally and git-ignored. */
 export const ITEMS_DEMO = STORAGE_MODE === "local" && process.env.NEXT_PUBLIC_ITEMS_DEMO === "1";
@@ -19,7 +19,7 @@ export interface SavedProduct {
 export interface ItemsRepository {
   readonly kind: "server" | "local-demo" | "local-empty";
   /** `profile` is used by the local implementation; the server reads the caller's own stored profile. */
-  runnersLikeYou(range: Range, profile: MatchProfile): Promise<RunnersLikeYou>;
+  itemsMatch(profile: MatchProfile): Promise<ItemsMatch>;
   product(id: string): Promise<Product | null>;
   saved(): Promise<SavedProduct[]>;
   save(productId: string): Promise<void>;
@@ -38,12 +38,13 @@ function db() {
 
 export const serverItemsRepository: ItemsRepository = {
   kind: "server",
-  async runnersLikeYou(range) {
+  async itemsMatch() {
     await ensureUserId();
-    const { data, error } = await db().rpc("runners_like_you", { p_wide: range === "wide" });
+    const { data, error } = await db().rpc("items_match");
     if (error) throw error;
-    const r = data as RunnersLikeYou;
-    return { ...r, items: (r.items ?? []).map((i) => ({ ...i, share: Number(i.share), total_km: i.total_km == null ? null : Number(i.total_km) })) };
+    const r = data as ItemsMatch;
+    // numeric columns arrive as strings; DEMO / browse items keep null numbers
+    return { ...r, items: (r.items ?? []).map((i) => ({ ...i, share: i.share == null ? null : Number(i.share), total_km: i.total_km == null ? null : Number(i.total_km) })) };
   },
   async product(id) {
     await ensureUserId();
@@ -103,8 +104,8 @@ function writeSaved(list: { id: string; at: string }[]) {
 
 export const localItemsRepository: ItemsRepository = {
   kind: ITEMS_DEMO ? "local-demo" : "local-empty",
-  async runnersLikeYou(range, profile) {
-    return aggregate(await loadDataset(), profile, range);
+  async itemsMatch(profile) {
+    return itemsMatch(await loadDataset(), profile);
   },
   async product(id) {
     return (await loadDataset()).products.find((p) => p.id === id) ?? null;
