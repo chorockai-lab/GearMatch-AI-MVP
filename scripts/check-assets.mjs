@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("../public/assets/", import.meta.url));
 const EXPECT = {
-  char: ["ham", "che", "hor", "goa", "fox", "wol", "ott", "cat"].flatMap((a) => [`char-${a}-base.png`, `char-${a}-run.png`]),
+  char: ["ham", "che", "hor", "goa", "fox", "wol", "ott", "cat"].flatMap((a) => [`char-${a}-base.png`, `char-${a}-run.png`, `char-${a}-celebrate.png`]),
   human: ["human-base.png", "human-run.png", "human-celebrate.png"],
   fx: ["fx-shadow.png", "fx-shadow-wide.png", "fx-speed.png", "fx-celebrate.png"],
 };
@@ -23,5 +23,6 @@ for (const [dir, files] of Object.entries(EXPECT)) {
     if (!ok) fail++;
   }
 }
-console.log(fail ? `\n${fail} problem(s)` : "\nAll 23 PNG assets present and 64×48 RGBA");
+const total = Object.values(EXPECT).flat().length;
+console.log(fail ? `\n${fail} problem(s)` : `\nAll ${total} PNG assets present and 64×48 RGBA`);
 process.exit(fail ? 1 : 0);
