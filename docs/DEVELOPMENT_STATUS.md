@@ -15,7 +15,8 @@
 ## 실기기 QA (Issue #12) — iPhone 완료 · Android 대기
 
 - **iPhone (2026-10-16):** Safari·카카오톡 인앱 정상, 양쪽 이미지 저장 성공, 브라우저별 기록 유지. Safari 일시적 로딩 오류 1회(자동 회복) — 기록만, 수정 보류
-- **Android:** Chrome · 삼성 인터넷 · 카카오톡 인앱 — 체크리스트 §0-2로 진행 예정
+- **Android:** Chrome · 삼성 인터넷 · 카카오톡 인앱 — **미검증**, 체크리스트 §0-2로 진행 예정
+- **외부 테스트 준비 (#14, 2026-10-16 초안):** 개인정보 안내문 초안 `docs/PRIVACY_NOTICE_DRAFT.md`(승인 전 `/privacy` 미반영) · 보안 점검 `docs/SECURITY_REVIEW.md` · 참여자 안내·설문·지표 `docs/USER_TEST_KIT.md` · 분석 쿼리 §9~§11 추가(`verify:sql`로 실행 검증)
 - **계정 연결(#13) 보류 확정:** 브라우저별 익명 계정 분리 유지, 분리·복구 한계는 테스트 참여자에게 직접 안내(안내 UI 추가 없음)
 
 - 절차·기록표: `docs/QA_DEVICE_CHECKLIST.md` (iPhone Safari · Android Chrome · 카카오톡 인앱, 항목별 정상/오류/미검증)
