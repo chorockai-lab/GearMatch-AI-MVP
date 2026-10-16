@@ -12,7 +12,11 @@
 | 4 | ITEMS — 유사 러너 집계 · Product Detail · Saved | 완료 (main, PR #8 · 실제 Supabase 검증) |
 | 5 | QA & Deployment — 전체 QA · Vercel 내부 배포 | 진행 중 — Production 배포·자동 검증 완료, **실기기 QA 대기**(`docs/QA_DEVICE_CHECKLIST.md`, #12) |
 
-## 실기기 QA (Issue #12) — 준비 완료, 실행 대기
+## 실기기 QA (Issue #12) — iPhone 완료 · Android 대기
+
+- **iPhone (2026-10-16):** Safari·카카오톡 인앱 정상, 양쪽 이미지 저장 성공, 브라우저별 기록 유지. Safari 일시적 로딩 오류 1회(자동 회복) — 기록만, 수정 보류
+- **Android:** Chrome · 삼성 인터넷 · 카카오톡 인앱 — 체크리스트 §0-2로 진행 예정
+- **계정 연결(#13) 보류 확정:** 브라우저별 익명 계정 분리 유지, 분리·복구 한계는 테스트 참여자에게 직접 안내(안내 UI 추가 없음)
 
 - 절차·기록표: `docs/QA_DEVICE_CHECKLIST.md` (iPhone Safari · Android Chrome · 카카오톡 인앱, 항목별 정상/오류/미검증)
 - 범위: 첫 방문 · 온보딩 · 재방문 · 러닝 기록(수정·삭제) · Stats · Runner/Stats 이미지 생성·공유·사진 저장 · ITEMS 저장 · 320/375/390 레이아웃
@@ -222,6 +226,7 @@ QA 세션(`?qa=1`)·`test:rls`·`check:supabase`로 생긴 사용자/이벤트�
 
 ## 알려진 문제 · 한계
 
+- iPhone Safari에서 일시적 정보 로딩 오류 1회(2026-10-16, 자동 회복) — 재현 조건 미확인, 기록만 유지.
 - 첫 화면 방문만으로 익명 사용자가 생깁니다(방문 집계용). 봇·대량 생성 방지(CAPTCHA 등)는 외부 공개 전 STEP 5에서 결정.
 - 익명 사용자는 같은 브라우저에서만 이어짐 — 다른 브라우저·카카오톡 인앱·데이터 삭제 시 복구 불가. iOS Safari는 7일 미방문 시 저장소를 지울 수 있음. 해결: 계정 연결(#13).
 - `test:rls`·`check:supabase`를 실행할 때마다 검증용 익명 사용자가 남음(분석에서 제외됨).
