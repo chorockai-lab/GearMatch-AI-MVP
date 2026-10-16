@@ -36,6 +36,7 @@
    - `Function search_path mutable` → `runners_like_you`는 고정돼 있어 해당 없음. 다른 함수가 나오면 보고
    - `Anonymous access policies`(익명 사용자에게 열린 정책) → **의도된 구조**(익명 로그인 서비스). 목록이 정책이 있는 6개 테이블(`identity_results`·`runner_profiles`·`runs`·`events`·`products`·`saved_products`)인지만 확인
    - `Leaked password protection` 등 비밀번호 관련 → 비밀번호 로그인을 안 쓰므로 해당 없음
+   - (삭제 기능 적용 후) `delete_my_data` — "로그인 사용자가 실행 가능한 SECURITY DEFINER 함수" 경고 1건은 **의도된 예외**(매개변수 없음·호출자 본인만·anon 실행 불가, `docs/PRIVACY_DELETE.md` §2)
 4. 같은 화면 **Performance Advisor**는 참고만
 
 ### 3-2. 익명 가입 제한

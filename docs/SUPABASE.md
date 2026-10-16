@@ -23,6 +23,7 @@ NEXT_PUBLIC_DATA_MODE=real npm run build
 | `supabase/migrations/20261013000000_init.sql` | 대시보드 **SQL Editor에 붙여넣어 수동 실행** (저장 쿼리명 `STEP3_Core_Database_Setup`) | 2026-10-13 | `npm run check:supabase`가 4개 테이블·37개 열·`updated_at` 트리거를 확인. `npm run test:rls` 통과 |
 | `supabase/migrations/20261014000000_items.sql` | SQL Editor 수동 실행 (`STEP4_Items_Database_Setup`) | 2026-10-13 | `check:supabase`: products 13열·saved_products 3열·`runners_like_you()` 실행·샘플 러너 테이블 조회 차단(42501). `test:rls` 통과 |
 | `supabase/seed/items.generated.sql` (Git 제외) | SQL Editor — 상품 63개 upsert (`STEP4_Product_Data_Seed_v0.3`) | 2026-10-13 | 앱에 보이는 상품 50개(`check:supabase` INFO). 전체 63개·샘플 러너 0명은 아래 확인 SQL로 대시보드에서 확인 |
+| `supabase/migrations/20261016000000_delete_my_data.sql` | SQL Editor 수동 실행 (`P2_Delete_My_Data`, 사용자 승인·실행) | 2026-10-16 | 함수 `delete_my_data()` 1개 추가(기존 행 변경 없음). 권한 확인 SQL 정상 · 로그인 없는 호출 401/42501 · `npm run test:delete` 통과 · Preview QA 계정 실제 삭제 확인 |
 
 **주의: 위 SQL을 다시 실행하지 않습니다.** (다시 실행해도 `if not exists` / `drop policy if exists`로 같은 상태가 되지만, 운영 DB에서 정책을 지웠다 다시 만드는 순간이 생깁니다.)
 

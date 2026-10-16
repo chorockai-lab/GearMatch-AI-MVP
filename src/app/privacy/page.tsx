@@ -4,6 +4,7 @@
 import { useRouter } from "next/navigation";
 import { FlowFrame } from "@/components/onboarding/Flow";
 import { BackIcon } from "@/components/ui/icons";
+import { DeleteMyData } from "@/components/privacy/DeleteMyData";
 
 export default function PrivacyPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function PrivacyPage() {
       <main className="px-6 pt-6">
         <h1 className="m-0 text-[30px] leading-[38px] font-extrabold tracking-[-0.02em]">개인정보 수집·이용 안내</h1>
         <p className="mt-4 mb-0 text-[15px] leading-6 text-gm-g1">안내 문구가 아직 확정되지 않았어요. 확정되면 이 화면에 표시합니다.</p>
+        <DeleteMyData />
       </main>
     </FlowFrame>
   );
