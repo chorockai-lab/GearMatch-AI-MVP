@@ -16,6 +16,8 @@
 
 - **iPhone (2026-10-16):** Safari·카카오톡 인앱 정상, 양쪽 이미지 저장 성공, 브라우저별 기록 유지. Safari 일시적 로딩 오류 1회(자동 회복) — 기록만, 수정 보류
 - **Android:** Chrome · 삼성 인터넷 · 카카오톡 인앱 — **미검증**, 체크리스트 §0-2로 진행 예정
+- **앱 안 개인정보 삭제 완료 (PR #31 · main `8c866bb` · 2026-10-16):** `/privacy`의 `내 데이터 삭제` — DB 함수 `delete_my_data()`(매개변수 없음·호출자 본인·익명 계정만·anon 실행 불가, 서비스 키 없음)로 테스트 결과·프로필·기록·관심 신발·이벤트·익명 계정 삭제. 운영 DB 적용 · 실제 DB 테스트 · Preview/Production 신규 QA 계정 삭제 검증 완료(`docs/PRIVACY_DELETE.md`)
+- **`/privacy` 안내 문구는 미확정** — 공식 이메일 · 참여 연령 · 테스트 기간 · 법무 검토 후 별도 승인으로 반영(`docs/PRIVACY_NOTICE_DRAFT.md`)
 - **외부 테스트 준비 (#14, 2026-10-16 초안):** 개인정보 안내문 초안 `docs/PRIVACY_NOTICE_DRAFT.md`(승인 전 `/privacy` 미반영) · 보안 점검 `docs/SECURITY_REVIEW.md` · 참여자 안내·설문·지표 `docs/USER_TEST_KIT.md` · 분석 쿼리 §9~§11 추가(`verify:sql`로 실행 검증)
 - **계정 연결(#13) 보류 확정:** 브라우저별 익명 계정 분리 유지, 분리·복구 한계는 테스트 참여자에게 직접 안내(안내 UI 추가 없음)
 
