@@ -20,14 +20,20 @@
 - 외부 사용자 테스트 중단 기준(치명적 오류 6가지)과 완료 기준은 체크리스트 §3
 - QA 전용 **랜딩 다시 보기**: `/?qa=1&landing=1` — QA 표시가 있는 브라우저에서만 재방문 이동을 건너뜀. 결과가 있는 사용자가 테스트 버튼을 누르면 "테스트를 다시 할까요?" 확인(취소 시 아무것도 바뀌지 않음, 다시 하면 답을 바꾼 경우에만 동물 결과가 새로 바뀌고 기록·저장 신발은 유지). 일반 사용자 흐름 변화 없음 (PR A)
 
-## 캐릭터 v2 적용 (브랜치 `feat/character-v2` · 2026-10-16)
+## 캐릭터 v2 적용 (완료 · main, PR #26 · 2026-10-16 병합 `453b80a`)
 
 - 사용자 확정 디자인 보드 기준: 러너(흰 티 · 차콜 쇼츠 · 라임 러닝화) 3포즈 + 동물 8종 × 3포즈(BASE/RUN/CELEBRATE). 고양이는 검정·흰색 턱시도
 - 규격 유지: 64×48 PNG, 장면 ×3 · Reveal ×5, 발 아래 행 43. 러너가 주인공이 되도록 동물을 기존보다 작게 그림(배치 코드 변경 없음)
 - `char-*-celebrate.png` 8개는 보관만 함 — 어떤 화면도 사용하지 않음(MILESTONE 비활성 유지, 동물은 기존처럼 BASE)
 - 변경: `public/assets/{human,char}`, `src/lib/assets/sprites.ts`(bbox), `docs/asset-source/*.json`, `scripts/check-assets.mjs`(celebrate 8개 포함 31개 확인)
 - 검증(로컬 production 빌드): typecheck · lint · test 5종 · verify:sql · check:assets · build 통과. 320/375/390에서 RUNNING(8종 RUN · BASE · 첫 기록 · 실제 기록 데이터) · Reveal 8종 · Runner/Stats 카드 PNG 저장 확인, 콘솔 오류 0, 결과가 있는 사용자의 `/` 재방문 → `/running`
-- 실기기 확인은 #12에서 함께 진행
+- Preview(PR #26) 확인: 에셋 31개 해시 일치, 320/375/390 × 8종 × RUN/BASE 48조합 로드·겹침 0·장면 밖 0, QA 세션 온보딩 → Reveal → RUNNING → 기록 저장 → 재방문, 카드 PNG 생성
+- **Production 확인 (`?qa=1`, 2026-10-16):** Vercel 배포 성공 · main CI 통과 · 에셋 31개 해시 일치 · `/dev/session` 404
+  - QA 세션 온보딩 → Reveal(CAT, 새 턱시도 ×5) → RUNNING BASE → 기록 1건 저장 → RUN 포즈 → `/` 재방문 시 `/running` + 동물 결과 · 기록 · 저장 신발 유지
+  - 320/375/390 × 8종 × RUN/BASE 48조합: 이미지 로드 정상, 러너·동물 겹침 0, 장면 밖 0 (320px 최소 간격 8px). 러너 123px · 동물 57~87px(390)
+  - Runner Card 저장: 1170×1454 PNG, 화면 캐릭터 픽셀과 PNG 픽셀 100% 일치(러너 583/583 · 고양이 421/421), 다운로드 안내 문구 정상
+  - 이번 병합은 Supabase(마이그레이션·스키마) · 환경 변수 · 분석 코드 변경 없음 → 기존 사용자 데이터 · PostHog `qa` 설정 그대로
+- 실기기 확인은 #12에서 함께 진행 (QA 세션 테스트 계정 2개 생성: Preview 1 · Production 1, 모두 qa 표시)
 
 ## 기타 반영 (2026-10-15)
 
