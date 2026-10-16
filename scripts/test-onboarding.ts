@@ -4,6 +4,7 @@ import { parseAnswerString } from "../src/lib/identity/scoring";
 import { EMPTY_PROFILE, EMPTY_STATE, type OnboardingState } from "../src/lib/onboarding/types";
 import { detectBrowser } from "../src/lib/qa/browser";
 import { cardFilename, isInAppBrowser, saveTarget } from "../src/lib/share/share";
+import { keysToForget } from "../src/lib/privacy/deleteMyData";
 
 let failures = 0;
 const check = (ok: boolean, msg: string) => {
@@ -63,6 +64,12 @@ check(saveTarget(UA.safari) === "share" && saveTarget(UA.iosChrome) === "share",
 check(saveTarget(UA.androidChrome) === "download" && saveTarget(UA.samsung) === "download" && saveTarget(UA.desktop) === "download", "이미지 저장 on Android / desktop → direct download");
 check(saveTarget(UA.kakaoIos) === "longpress" && saveTarget(UA.kakaoAndroid) === "longpress", "이미지 저장 in KakaoTalk → preview + long-press");
 check(cardFilename("runner", new Date(2026, 9, 5)) === "gearmatch-runner-card-20261005.png" && cardFilename("stats", new Date(2026, 11, 31)) === "gearmatch-stats-card-20261231.png", "card PNG file name");
+
+const stored = ["gearmatch.onboarding.v1", "gearmatch.runs.v1", "gearmatch.saved.v1", "gearmatch.app_open", "gearmatch.qa", "gearmatch.analytics", "sb-x-auth-token", "ph_phc_x_posthog"];
+check(
+  JSON.stringify(keysToForget(stored)) === JSON.stringify(["gearmatch.onboarding.v1", "gearmatch.runs.v1", "gearmatch.saved.v1", "gearmatch.app_open"]),
+  "data deletion forgets app data keys, keeps QA marker / analytics choice, leaves other keys to the auth / analytics SDKs",
+);
 
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);
