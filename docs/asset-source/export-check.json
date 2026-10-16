@@ -6,16 +6,16 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 10,
+  "colors": 7,
   "bbox": [
-   20,
-   12,
-   43,
+   24,
+   24,
+   38,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "fa306a2251"
+  "sha1": "2341898a61"
  },
  "char-ham-run": {
   "size": [
@@ -24,16 +24,34 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 11,
+  "colors": 7,
   "bbox": [
-   16,
-   14,
-   48,
+   19,
+   25,
+   43,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "4781312423"
+  "sha1": "23c51abe91"
+ },
+ "char-ham-celebrate": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 7,
+  "bbox": [
+   22,
+   24,
+   42,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "f8967c28c5"
  },
  "char-che-base": {
   "size": [
@@ -42,16 +60,16 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 5,
+  "colors": 6,
   "bbox": [
-   8,
-   10,
-   56,
+   15,
+   21,
+   48,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "e3d76ebf34"
+  "sha1": "0d38ee5f2d"
  },
  "char-che-run": {
   "size": [
@@ -60,16 +78,34 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 5,
+  "colors": 6,
   "bbox": [
-   2,
-   11,
-   61,
-   40
+   10,
+   22,
+   54,
+   43
   ],
   "safe": true,
-  "bottom": 40,
-  "sha1": "94915fcb8a"
+  "bottom": 43,
+  "sha1": "b27d1a6f05"
+ },
+ "char-che-celebrate": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 6,
+  "bbox": [
+   12,
+   17,
+   52,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "1f4f746ddc"
  },
  "char-hor-base": {
   "size": [
@@ -78,16 +114,16 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 9,
+  "colors": 7,
   "bbox": [
-   8,
-   4,
-   55,
+   17,
+   16,
+   46,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "3df9d17de2"
+  "sha1": "04c7567d33"
  },
  "char-hor-run": {
   "size": [
@@ -96,16 +132,34 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 9,
+  "colors": 7,
   "bbox": [
-   2,
-   4,
-   57,
+   14,
+   15,
+   50,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "6387899b7d"
+  "sha1": "28aefbbc08"
+ },
+ "char-hor-celebrate": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 7,
+  "bbox": [
+   12,
+   16,
+   51,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "24559848b5"
  },
  "char-goa-base": {
   "size": [
@@ -114,16 +168,16 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 8,
+  "colors": 7,
   "bbox": [
+   20,
    16,
-   7,
-   49,
+   43,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "2bef20c711"
+  "sha1": "1cefb0c2b7"
  },
  "char-goa-run": {
   "size": [
@@ -132,16 +186,34 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 8,
+  "colors": 7,
   "bbox": [
-   8,
-   5,
-   50,
-   40
+   14,
+   15,
+   48,
+   43
   ],
   "safe": true,
-  "bottom": 40,
-  "sha1": "920afd30f7"
+  "bottom": 43,
+  "sha1": "8d5e00bddb"
+ },
+ "char-goa-celebrate": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 7,
+  "bbox": [
+   14,
+   17,
+   49,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "3b60f04404"
  },
  "char-fox-base": {
   "size": [
@@ -150,16 +222,16 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 8,
+  "colors": 6,
   "bbox": [
-   3,
-   12,
-   52,
+   24,
+   19,
+   39,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "45a4d2a843"
+  "sha1": "b36c6e8050"
  },
  "char-fox-run": {
   "size": [
@@ -168,16 +240,34 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 8,
+  "colors": 6,
   "bbox": [
-   2,
    12,
-   54,
+   20,
+   52,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "f60c96a4cd"
+  "sha1": "777f99be71"
+ },
+ "char-fox-celebrate": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 6,
+  "bbox": [
+   14,
+   20,
+   50,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "c0c7254e61"
  },
  "char-wol-base": {
   "size": [
@@ -188,14 +278,14 @@
   "alpha_binary": true,
   "colors": 6,
   "bbox": [
-   9,
-   10,
-   53,
+   19,
+   17,
+   44,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "add2e1ba8f"
+  "sha1": "17060ef643"
  },
  "char-wol-run": {
   "size": [
@@ -206,14 +296,32 @@
   "alpha_binary": true,
   "colors": 7,
   "bbox": [
-   2,
    10,
-   54,
+   19,
+   52,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "b2dbd49244"
+  "sha1": "6e94fd5660"
+ },
+ "char-wol-celebrate": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 7,
+  "bbox": [
+   12,
+   18,
+   51,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "f3a88967c8"
  },
  "char-ott-base": {
   "size": [
@@ -222,16 +330,16 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 7,
+  "colors": 6,
   "bbox": [
-   10,
-   11,
-   39,
+   20,
+   20,
+   42,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "749ff7c369"
+  "sha1": "58a9d22300"
  },
  "char-ott-run": {
   "size": [
@@ -240,16 +348,34 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 7,
+  "colors": 6,
   "bbox": [
-   2,
-   18,
-   49,
+   12,
+   21,
+   52,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "1de9b7e17a"
+  "sha1": "aee67b2f9c"
+ },
+ "char-ott-celebrate": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 6,
+  "bbox": [
+   11,
+   21,
+   52,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "aa5268e43b"
  },
  "char-cat-base": {
   "size": [
@@ -258,16 +384,16 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 8,
+  "colors": 7,
   "bbox": [
-   16,
-   10,
-   41,
+   20,
+   18,
+   42,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "b9e13e66f5"
+  "sha1": "594e85a5a3"
  },
  "char-cat-run": {
   "size": [
@@ -276,16 +402,34 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 9,
+  "colors": 7,
   "bbox": [
-   8,
-   10,
-   49,
+   15,
+   20,
+   48,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "ba3ac4c27a"
+  "sha1": "266c7f79e2"
+ },
+ "char-cat-celebrate": {
+  "size": [
+   64,
+   48
+  ],
+  "mode": "RGBA",
+  "alpha_binary": true,
+  "colors": 7,
+  "bbox": [
+   14,
+   21,
+   48,
+   43
+  ],
+  "safe": true,
+  "bottom": 43,
+  "sha1": "7349971ac3"
  },
  "human-base": {
   "size": [
@@ -294,16 +438,16 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 11,
+  "colors": 14,
   "bbox": [
-   25,
-   2,
+   24,
+   3,
    40,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "75ec0b3407"
+  "sha1": "222089a53e"
  },
  "human-run": {
   "size": [
@@ -312,16 +456,16 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 11,
+  "colors": 14,
   "bbox": [
-   16,
-   2,
-   45,
+   15,
+   3,
+   48,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "46feda1ade"
+  "sha1": "d176451fd6"
  },
  "human-celebrate": {
   "size": [
@@ -330,16 +474,16 @@
   ],
   "mode": "RGBA",
   "alpha_binary": true,
-  "colors": 11,
+  "colors": 14,
   "bbox": [
-   23,
-   2,
-   43,
+   20,
+   4,
+   44,
    43
   ],
   "safe": true,
   "bottom": 43,
-  "sha1": "5599227086"
+  "sha1": "79f9e680fd"
  },
  "fx-shadow": {
   "size": [
