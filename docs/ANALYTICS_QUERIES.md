@@ -163,6 +163,75 @@ from ev
 where created_at >= now() - interval '7 days';
 ```
 
+## 9. 온보딩 단계별 이탈 (테스트 기간)
+
+Reveal 이후 단계를 순서대로 셉니다. `profile_runner`는 신체 정보 입력(완료) 또는 건너뛰기 중 먼저 일어난 것.
+테스트 기간은 `period`의 두 값을 실제 시작·종료 시각으로 바꿉니다(예: `timestamptz '2026-10-20 00:00+09'`).
+
+```sql
+-- (0의 with 블록)
+, period as (select now() - interval '14 days' as t0, now() as t1),
+f as (
+  select user_id,
+         min(created_at) filter (where name = 'reveal_view')                                        as t_reveal,
+         min(created_at) filter (where name = 'profile_habits_complete')                            as t_habits,
+         min(created_at) filter (where name in ('profile_runner_complete', 'profile_runner_skip'))  as t_runner,
+         bool_or(name = 'profile_runner_skip')                                                       as skipped_runner,
+         min(created_at) filter (where name = 'onboarding_complete')                                as t_done
+  from ev, period
+  where created_at >= period.t0 and created_at < period.t1
+  group by user_id
+)
+select count(*) filter (where t_reveal is not null)                                                     as s1_reveal,
+       count(*) filter (where t_habits >= t_reveal)                                                     as s2_habits,
+       count(*) filter (where t_runner >= t_habits and t_habits >= t_reveal)                            as s3_body_info_step,
+       count(*) filter (where t_runner >= t_habits and t_habits >= t_reveal and skipped_runner)         as s3_skipped_body_info,
+       count(*) filter (where t_done >= t_runner and t_runner >= t_habits and t_habits >= t_reveal)     as s4_onboarded
+from f;
+```
+
+## 10. 카드 이미지 저장·공유 결과 (테스트 기간)
+
+`card_image_create` = 이미지가 만들어짐. `card_share_result`의 `method · result`:
+`share · shared`(iPhone 공유 시트 완료) · `share · cancelled`(닫음, 오류 아님) · `download · started`(다운로드 시작 — 갤러리 저장 확인은 아님) · `longpress · guide_shown`(인앱 미리보기 표시) · `* · failed`.
+
+```sql
+-- (0의 with 블록)
+, period as (select now() - interval '14 days' as t0, now() as t1)
+select name,
+       props->>'card'   as card,
+       props->>'method' as method,
+       props->>'result' as result,
+       count(*)                as events,
+       count(distinct user_id) as users
+from ev, period
+where name in ('card_image_create', 'card_share_result')
+  and created_at >= period.t0 and created_at < period.t1
+group by 1, 2, 3, 4
+order by 1, 2, 3, 4;
+```
+
+## 11. 첫 러닝 기록 저장률 (테스트 기간에 온보딩을 마친 사용자)
+
+```sql
+-- (0의 with 블록)
+, period as (select now() - interval '14 days' as t0, now() as t1),
+u as (
+  select user_id,
+         min(created_at) filter (where name = 'onboarding_complete') as t_on,
+         min(created_at) filter (where name = 'run_save_success')    as t_run,
+         count(*)        filter (where name = 'run_save_success')    as runs
+  from ev
+  group by user_id
+)
+select count(*)                                       as onboarded,
+       count(*) filter (where t_run >= t_on)          as saved_first_run,
+       round(100.0 * count(*) filter (where t_run >= t_on) / nullif(count(*), 0), 1) as pct_first_run,
+       round(avg(runs) filter (where t_run >= t_on), 1) as avg_runs_per_saver
+from u, period
+where t_on >= period.t0 and t_on < period.t1;
+```
+
 ## 참고
 
 - 익명 사용자 기준입니다. 같은 사람이 다른 브라우저·시크릿 창을 쓰면 다른 사용자로 셉니다.

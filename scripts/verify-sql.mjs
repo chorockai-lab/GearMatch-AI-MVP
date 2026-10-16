@@ -98,7 +98,7 @@ const md = readFileSync("docs/ANALYTICS_QUERIES.md", "utf8").replace(/\r\n/g, "\
 const blocks = [...md.matchAll(/```sql\n([\s\S]*?)```/g)].map((m) => m[1]);
 const withBlock = blocks[0];
 const queries = blocks.slice(1).map((b) => b.replace("-- (0의 with 블록)\n", withBlock.trimEnd() + "\n"));
-check(queries.length === 8, `found ${queries.length} queries in docs/ANALYTICS_QUERIES.md`);
+check(queries.length === 11, `found ${queries.length} queries in docs/ANALYTICS_QUERIES.md`);
 
 const results = [];
 for (const [i, q] of queries.entries()) {
@@ -126,6 +126,10 @@ check(
 check(String(f.pct_start_to_complete) === "33.3", `start→complete 33.3% → ${f.pct_start_to_complete}`);
 check(JSON.stringify(questions?.map((r) => [r.question, Number(r.users_reached)])) === JSON.stringify([[1, 2], [2, 2], [3, 1], [4, 1], [5, 1]]), "question drop-off 2,2,1,1,1");
 check(Number(returning?.[0]?.returning_users) === 1, `returning users (app_open on 2+ days) = 1 → ${returning?.[0]?.returning_users}`);
+const onb = results[8]?.[0] ?? {};
+check(Number(onb.s1_reveal) === 1 && Number(onb.s2_habits) === 0, `onboarding steps: reveal 1 → habits 0 (sample has no profile events) → ${onb.s1_reveal}, ${onb.s2_habits}`);
+const first = results[10]?.[0] ?? {};
+check(Number(first.onboarded) === 1 && Number(first.saved_first_run) === 1, `first run: onboarded 1 → saved 1 → ${first.onboarded}, ${first.saved_first_run}`);
 
 console.log(fail ? `\n${fail} CHECK(S) FAILED` : "\nALL SQL CHECKS PASSED");
 process.exit(fail ? 1 : 0);
