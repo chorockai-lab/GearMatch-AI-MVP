@@ -148,8 +148,10 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Paints `root` (already laid out on the page) into ctx at (dx, dy), in CSS pixels (ctx carries the scale). */
-export async function paintInto(ctx: CanvasRenderingContext2D, root: HTMLElement, dx = 0, dy = 0): Promise<void> {
+/** Paints `root` (already laid out on the page) into ctx at (dx, dy), in CSS pixels (ctx carries the scale).
+ * `stage` is told which step is running (QA diagnostics in CardShare). */
+export async function paintInto(ctx: CanvasRenderingContext2D, root: HTMLElement, dx = 0, dy = 0, stage: (s: string) => void = () => {}): Promise<void> {
+  stage("paint:collect");
   const origin = root.getBoundingClientRect();
   const ops: Op[] = [];
   collect(root, origin, ops, 1);
@@ -157,12 +159,15 @@ export async function paintInto(ctx: CanvasRenderingContext2D, root: HTMLElement
   // every font/text pair must be loaded for the canvas (unicode-range subsets are not fetched by fillText)
   const fontText = new Map<string, string>();
   for (const op of ops) if (op.k === "text") fontText.set(op.font, (fontText.get(op.font) ?? "") + op.chars.map((c) => c.ch).join("") + "…");
+  stage("paint:fonts");
   await Promise.all(Array.from(fontText, ([font, text]) => document.fonts.load(font, text)));
+  stage("paint:images");
   const images = new Map<string, HTMLImageElement>();
   await Promise.all(
     Array.from(new Set(ops.flatMap((op) => (op.k === "img" ? [op.src] : [])))).map(async (src) => images.set(src, await loadImage(src))),
   );
 
+  stage("paint:draw");
   ctx.save();
   ctx.translate(dx, dy);
   for (const op of ops) {
