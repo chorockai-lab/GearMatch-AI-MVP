@@ -19,6 +19,7 @@
 - **앱 안 개인정보 삭제 완료 (PR #31 · main `8c866bb` · 2026-10-16):** `/privacy`의 `내 데이터 삭제` — DB 함수 `delete_my_data()`(매개변수 없음·호출자 본인·익명 계정만·anon 실행 불가, 서비스 키 없음)로 테스트 결과·프로필·기록·관심 신발·이벤트·익명 계정 삭제. 운영 DB 적용 · 실제 DB 테스트 · Preview/Production 신규 QA 계정 삭제 검증 완료(`docs/PRIVACY_DELETE.md`)
 - **`/privacy` 안내 문구는 미확정** — 공식 이메일 · 참여 연령 · 테스트 기간 · 법무 검토 후 별도 승인으로 반영(`docs/PRIVACY_NOTICE_DRAFT.md`)
 - **외부 테스트 준비 (#14, 2026-10-16 초안):** 개인정보 안내문 초안 `docs/PRIVACY_NOTICE_DRAFT.md`(승인 전 `/privacy` 미반영) · 보안 점검 `docs/SECURITY_REVIEW.md` · 참여자 안내·설문·지표 `docs/USER_TEST_KIT.md` · 분석 쿼리 §9~§11 추가(`verify:sql`로 실행 검증)
+- **외부 테스트 최종 준비 (2026-10-19, 기능 개발 종료):** 확정 운영 정책(초록소프트 · chorock@chorock.co.kr · 한국 거주 만 19세 이상 · 2026-10-21~11-04 · 종료 후 3개월 보관) 반영 — 개인정보 안내문 초안·미확정 항목·법무 쟁점표 `docs/PRIVACY_NOTICE_DRAFT.md`, 콘솔 확인 경로·정상 기준·Advisor 경고별 권한 검토 `docs/SECURITY_REVIEW.md` §3, 안내문·설문 최종안·공유 전 필수 조건 `docs/USER_TEST_KIT.md`, 분석 기간 §0 `period`로 고정(`verify:sql` 통과), Android 체크리스트 §0-2 보강. **`/privacy` 게시·동의 UI는 법적 검토와 승인 후**. 외부 공유 가능 여부는 `USER_TEST_KIT.md` §5 조건으로 판단
 - **계정 연결(#13) 보류 확정:** 브라우저별 익명 계정 분리 유지, 분리·복구 한계는 테스트 참여자에게 직접 안내(안내 UI 추가 없음)
 
 - 절차·기록표: `docs/QA_DEVICE_CHECKLIST.md` (iPhone Safari · Android Chrome · 카카오톡 인앱, 항목별 정상/오류/미검증)
@@ -252,6 +253,7 @@ QA 세션(`?qa=1`)·`test:rls`·`check:supabase`로 생긴 사용자/이벤트�
 - 시안 없는 최소 구현: Current Shoe "직접 입력", 개인정보 안내(`/privacy`), RUNNING "?" → 결과 다시 보기
 - Stats 문장의 시안 외 경우(이전 4주 0km, 감소, 동일, 페이스 비교) 문구 — 잠정 문구 사용 중
 - CURRENT MODE 산출 규칙, FIRST 10K 조건
+- `/privacy`(안내·`내 데이터 삭제`)로 가는 앱 안 링크가 프로필 2단계에만 있음 — 온보딩 후에는 주소로 직접 열어야 함(안내문에 바로가기 포함). 앱 안 링크 추가는 UI 변경이라 법적 검토(쟁점 L-3)와 함께 결정
 
 ## GitHub
 

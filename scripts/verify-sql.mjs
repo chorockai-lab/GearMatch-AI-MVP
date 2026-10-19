@@ -96,7 +96,10 @@ await db.exec(`reset role;`);
 // ── analytics queries from the doc ──────────────────────────────────────────
 const md = readFileSync("docs/ANALYTICS_QUERIES.md", "utf8").replace(/\r\n/g, "\n"); // Windows checkouts use CRLF
 const blocks = [...md.matchAll(/```sql\n([\s\S]*?)```/g)].map((m) => m[1]);
-const withBlock = blocks[0];
+// The doc fixes the external test period in §0; sample events are relative to now(), so the check runs it as "the last 7 days".
+const PERIOD = "period as (select timestamptz '2026-10-21 00:00+09' as t0, timestamptz '2026-11-05 00:00+09' as t1)";
+check(blocks[0].includes(PERIOD), "§0 defines the external test period 2026-10-21 ~ 2026-11-04 (KST)");
+const withBlock = blocks[0].replace(PERIOD, "period as (select now() - interval '7 days' as t0, now() + interval '1 minute' as t1)");
 const queries = blocks.slice(1).map((b) => b.replace("-- (0의 with 블록)\n", withBlock.trimEnd() + "\n"));
 check(queries.length === 11, `found ${queries.length} queries in docs/ANALYTICS_QUERIES.md`);
 
