@@ -8,7 +8,7 @@
 //   • KakaoTalk / other in-app browsers → preview + long-press saving (downloads usually go nowhere there).
 // Completion we cannot observe is never shown as success. Nothing is sent to a server.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { track } from "@/lib/events/track";
+import { isQaSession, track } from "@/lib/events/track";
 import { paintInto } from "@/lib/share/paint";
 import { canShareFile, cardFilename, isInAppBrowser, saveTarget, shareFile, startDownload, type CardKind, type ShareMethod, type ShareResult } from "@/lib/share/share";
 import { PrimaryButton } from "@/components/onboarding/Flow";
@@ -35,9 +35,28 @@ interface Sheet {
 const nextFrame = () =>
   Promise.race([new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))), new Promise((r) => setTimeout(r, 120))]);
 
+/** Which step of the image pipeline is running and since when — for the QA diagnosis of a failure. */
+interface Trace {
+  stage: string;
+  t0: number;
+  steps: string[];
+}
+const newTrace = (): Trace => ({ stage: "start", t0: performance.now(), steps: [] });
+const mark = (t: Trace, stage: string) => {
+  t.stage = stage;
+  t.steps.push(`${stage}@${Math.round(performance.now() - t.t0)}`);
+};
+
+/** One line for QA: failing step, elapsed time, error type and message. URLs / data URIs are cut out; nothing personal is in it. */
+function diagnose(e: unknown, t: Trace): string {
+  const name = e instanceof Error ? e.name : typeof e;
+  const msg = (e instanceof Error ? e.message : String(e)).replace(/(data:|blob:|https?:\/\/|\/)[^\s)"']*/g, "[url]").slice(0, 120);
+  return `${t.stage} · ${Math.round(performance.now() - t.t0)}ms · ${name}: ${msg} · ${t.steps.join(" ")}`;
+}
+
 /** Never leave the user waiting: after TIMEOUT_MS the attempt fails. */
-const withTimeout = <T,>(p: Promise<T>) =>
-  Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timed out")), TIMEOUT_MS))]);
+const withTimeout = <T,>(p: Promise<T>, t: Trace) =>
+  Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`timed out at ${t.stage}`)), TIMEOUT_MS))]);
 
 /** Offscreen copy of the card at the design width + the GEARMATCH (and DEMO DATA) mark below it. */
 function buildFrame(card: CardKind, demo: boolean) {
@@ -63,7 +82,8 @@ function buildFrame(card: CardKind, demo: boolean) {
   return { host, slot };
 }
 
-async function renderCard(targetId: string, card: CardKind, demo: boolean): Promise<CardImage> {
+async function renderCard(targetId: string, card: CardKind, demo: boolean, t: Trace): Promise<CardImage> {
+  mark(t, "clone");
   const target = document.getElementById(targetId);
   if (!target) throw new Error("card not found");
   const { host, slot } = buildFrame(card, demo);
@@ -73,9 +93,13 @@ async function renderCard(targetId: string, card: CardKind, demo: boolean): Prom
   slot.append(clone);
   document.body.append(host);
   try {
+    mark(t, "fonts.ready");
     await document.fonts.ready;
+    mark(t, "img.decode");
     await Promise.all(Array.from(host.querySelectorAll("img")).map((img) => img.decode().catch(() => undefined)));
+    mark(t, "frame");
     await nextFrame();
+    mark(t, "canvas");
     const r = host.getBoundingClientRect();
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(r.width * SCALE);
@@ -85,8 +109,10 @@ async function renderCard(targetId: string, card: CardKind, demo: boolean): Prom
     ctx.scale(SCALE, SCALE);
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, r.width, r.height);
-    await paintInto(ctx, host);
+    await paintInto(ctx, host, 0, 0, (s) => mark(t, s));
+    mark(t, `toBlob ${canvas.width}x${canvas.height}`);
     const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png"));
+    mark(t, "done");
     return { blob, file: new File([blob], cardFilename(card), { type: "image/png" }) };
   } finally {
     host.remove();
@@ -118,11 +144,22 @@ export function CardShare({ targetId, card, demo = false }: { targetId: string; 
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [sheetCreating, setSheetCreating] = useState(false);
   const [sheetError, setSheetError] = useState(false);
+  const [diag, setDiag] = useState<string | null>(null); // QA sessions only: why the last image attempt failed
   const prepared = useRef<CardImage | null>(null);
   const closeBtn = useRef<HTMLButtonElement>(null);
 
   const report = useCallback((method: ShareMethod, result: ShareResult) => track("card_share_result", { card, method, result }), [card]);
-  const create = useCallback(() => withTimeout(renderCard(targetId, card, demo)), [targetId, card, demo]);
+  const create = useCallback(async () => {
+    const t = newTrace();
+    try {
+      return await withTimeout(renderCard(targetId, card, demo, t), t);
+    } catch (e) {
+      const d = diagnose(e, t);
+      console.warn("[card image]", d);
+      setDiag(isQaSession() ? d : null);
+      throw e;
+    }
+  }, [targetId, card, demo]);
 
   // iPhone only: keep a ready-made PNG of the card as it is now, so the share sheet can open right on the tap.
   useEffect(() => {
@@ -165,6 +202,7 @@ export function CardShare({ targetId, card, demo = false }: { targetId: string; 
   /** In-app browsers: open the preview right away and fill it once the image is ready. */
   const openInApp = useCallback(async () => {
     setSheetError(false);
+    setDiag(null);
     setSheetCreating(true);
     setSheet({ url: "", file: new File([], ""), shareable: false, note: MSG.inAppNote });
     try {
@@ -187,10 +225,10 @@ export function CardShare({ targetId, card, demo = false }: { targetId: string; 
     let img = prepared.current;
     if (!img) {
       setBusy(true);
+      setDiag(null);
       try {
         img = await create();
-      } catch (e) {
-        console.warn("[card image]", e instanceof Error ? e.message : e);
+      } catch {
         report("create", "failed");
         setStatus(MSG.createFailed);
         return;
@@ -249,6 +287,7 @@ export function CardShare({ targetId, card, demo = false }: { targetId: string; 
           {status}
         </p>
       )}
+      {diag && !sheet && <QaDiag text={diag} />}
 
       {sheet && (
         <div role="dialog" aria-modal="true" aria-label="카드 이미지 저장" className="fixed inset-0 z-[60] overflow-y-auto bg-gm-bg">
@@ -273,6 +312,7 @@ export function CardShare({ targetId, card, demo = false }: { targetId: string; 
                 <button type="button" onClick={() => void openInApp()} className="mt-5 flex h-[46px] w-[140px] items-center justify-center border border-gm-line3 text-[16px] font-bold">
                   다시 시도
                 </button>
+                {diag && <QaDiag text={diag} />}
               </div>
             )}
 
@@ -301,4 +341,9 @@ export function CardShare({ targetId, card, demo = false }: { targetId: string; 
       )}
     </>
   );
+}
+
+/** QA sessions (`?qa=1`) only: the failure diagnosis, selectable so a tester can copy it. */
+function QaDiag({ text }: { text: string }) {
+  return <p className="mt-2 mb-0 font-mono text-[11px] leading-4 break-all text-gm-g2 select-all">QA · {text}</p>;
 }
