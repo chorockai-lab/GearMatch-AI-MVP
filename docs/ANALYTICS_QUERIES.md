@@ -13,6 +13,15 @@
 | QA 브라우저 | 이벤트 `props.qa = true` | 아무 화면이나 `?qa=1`로 열면 그 브라우저의 이벤트에 붙음 (`?qa=0`으로 해제) |
 | RLS 검증 사용자 | `auth.users.raw_user_meta_data.qa = 'rls_test'` · 이벤트 `rls_test` | `npm run test:rls` |
 | 연결 점검 사용자 | `auth.users.raw_user_meta_data.qa = 'check_supabase'` | `npm run check:supabase` |
+| QA 표시 누락 계정 (아래 목록) | 사용자 ID 직접 지정 | QA 도중 `?qa=1` 없이 처음 열린 세션 |
+
+**QA 표시 누락 계정** — 2026-10-19 ITEMS 배포 검증 중, 저장 공간이 초기화된 테스트 브라우저가 `?qa=1` 없이 처음 열려 생긴 익명 계정입니다.
+ID는 해당 브라우저의 저장된 세션에서 그대로 읽은 값(추정 아님)입니다. 두 계정 모두 이후 `?qa=1`로 다시 열어 `qa = true` 이벤트가 생겼으므로 위 첫 번째 규칙으로도 제외되지만, 확실히 하기 위해 아래 `with` 블록에 직접 넣었습니다.
+
+| 사용자 ID | 생성 | 표시 없는 이벤트 |
+|---|---|---|
+| `4951accc-b218-4e71-a8a4-d1f4364bf006` | 2026-10-19 00:43 UTC | `app_open`·`test_start`·`test_question_view` 9건(테스트 1번 문항까지) |
+| `43b0e116-f4de-4c36-90f6-62b623416fc6` | 2026-10-19 (헤드리스 브라우저) | 6건 |
 
 아래 `with` 블록을 각 쿼리 맨 앞에 붙여 씁니다.
 
@@ -21,6 +30,8 @@ with excluded as (
   select distinct user_id from public.events where props->>'qa' = 'true' or name = 'rls_test'
   union
   select id from auth.users where raw_user_meta_data ? 'qa'
+  union
+  select unnest(array['4951accc-b218-4e71-a8a4-d1f4364bf006', '43b0e116-f4de-4c36-90f6-62b623416fc6']::uuid[]) -- QA 표시 누락 계정
 ),
 ev as (
   select e.*, (e.created_at at time zone 'Asia/Seoul') as kst
