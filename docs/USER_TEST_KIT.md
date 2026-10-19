@@ -111,7 +111,7 @@
 | 2 | 개인정보 보호책임자 지정·표기 확정(U-1) | 사내 | 대기 |
 | 3 | 안내문 최종 승인 → `/privacy` 문구 교체 PR → Production 배포·확인 | 사용자 승인 → 개발 | 대기(승인 후 진행) |
 | 4 | 검토 결과 별도 동의·연령 확인 UI가 필요하면 그 개발·배포, 아니면 "불필요" 기록 | 법무 → 사용자 | 대기 |
-| 5 | Supabase 확인: Security Advisor ERROR 0 · 익명 로그인 켜짐 · Rate Limit 30 이상 · 리전 기록 (`SECURITY_REVIEW.md` §3) | 사용자(콘솔) | 대기 |
+| 5 | Supabase 확인: Security Advisor ERROR 0 · 익명 로그인 켜짐 · Rate Limit 적정성 판단(§3-3) · 리전 기록 (`SECURITY_REVIEW.md` §3) | 사용자(콘솔) | 대기 |
 | 6 | Android 실기기 QA: Chrome·삼성 인터넷·카카오톡(Android) 치명적 오류 0 (`QA_DEVICE_CHECKLIST.md` §0-2) | 내부 QA | 미검증 |
 | 7 | 설문 폼 생성·링크 확인(익명, §2 문항) | 운영 | 대기 |
 | 8 | 시작 시각 기록, 실제 시작일이 바뀌면 기간 3곳 수정 | 운영 | — |
