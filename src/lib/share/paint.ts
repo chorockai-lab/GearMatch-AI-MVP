@@ -10,7 +10,7 @@ type Op =
   | ({ k: "rect"; color: string; a: number } & Box)
   | ({ k: "img"; src: string; a: number; smooth: boolean } & Box)
   | ({ k: "grad"; segs: { color: string; from: number; to: number }[]; period: number; offset: number; a: number } & Box)
-  | { k: "text"; chars: { ch: string; x: number; top: number; right: number }[]; font: string; color: string; a: number; clipRight: number | null; spacing: number }
+  | { k: "text"; chars: { ch: string; x: number; top: number; right: number }[]; font: string; families: string[]; color: string; a: number; clipRight: number | null; spacing: number }
   | ({ k: "clip" } & Box)
   | { k: "unclip" };
 
@@ -112,6 +112,8 @@ function collect(el: Element, origin: DOMRect, ops: Op[], alpha: number): void {
   const ellipsis = cs.textOverflow === "ellipsis" && el.scrollWidth > el.clientWidth + 1;
   const clipRight = ellipsis ? box.x + box.w - parseFloat(cs.paddingRight || "0") : null;
   const font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  // one font string per family, for loading (see paintInto)
+  const families = cs.fontFamily.split(",").map((f) => `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${f.trim()}`);
   const upper = cs.textTransform === "uppercase";
   const spacing = parseFloat(cs.letterSpacing) || 0; // "normal" → 0
 
@@ -131,7 +133,7 @@ function collect(el: Element, origin: DOMRect, ops: Op[], alpha: number): void {
         if (cr) chars.push({ ch: /\s/.test(ch) ? " " : upper ? ch.toUpperCase() : ch, x: cr.left - origin.left, top: cr.top - origin.top, right: cr.right - origin.left });
         i += len;
       }
-      if (chars.some((c) => c.ch !== " ")) ops.push({ k: "text", chars, font, color: cs.color, a, clipRight, spacing });
+      if (chars.some((c) => c.ch !== " ")) ops.push({ k: "text", chars, font, families, color: cs.color, a, clipRight, spacing });
     } else if (child instanceof Element) {
       collect(child, origin, ops, a);
     }
@@ -156,11 +158,18 @@ export async function paintInto(ctx: CanvasRenderingContext2D, root: HTMLElement
   const ops: Op[] = [];
   collect(root, origin, ops, 1);
 
-  // every font/text pair must be loaded for the canvas (unicode-range subsets are not fetched by fillText)
+  // every font/text pair must be loaded for the canvas (unicode-range subsets are not fetched by fillText).
+  // Loaded one family at a time and failures tolerated: the metric fallbacks are `src: local("Arial")`, and Android has
+  // no Arial — one face that cannot load makes document.fonts.load() reject with NetworkError for the whole list, which
+  // stopped every card image on Android. The web fonts the card is drawn with load independently of that fallback.
   const fontText = new Map<string, string>();
-  for (const op of ops) if (op.k === "text") fontText.set(op.font, (fontText.get(op.font) ?? "") + op.chars.map((c) => c.ch).join("") + "…");
+  for (const op of ops) {
+    if (op.k !== "text") continue;
+    const text = op.chars.map((c) => c.ch).join("") + "…";
+    for (const f of op.families) fontText.set(f, (fontText.get(f) ?? "") + text);
+  }
   stage("paint:fonts");
-  await Promise.all(Array.from(fontText, ([font, text]) => document.fonts.load(font, text)));
+  await Promise.allSettled(Array.from(fontText, ([font, text]) => document.fonts.load(font, text)));
   stage("paint:images");
   const images = new Map<string, HTMLImageElement>();
   await Promise.all(
