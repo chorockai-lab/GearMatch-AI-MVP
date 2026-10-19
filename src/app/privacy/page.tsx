@@ -1,24 +1,27 @@
 "use client";
-// UI handoff: "개인정보 수집·이용 안내" is linked from Profile step 2 but has no copy or screen yet (MISSING · DECISION NEEDED).
+// "개인정보 수집·이용 안내" — no handoff screen (MISSING); copy from docs/PRIVACY_NOTICE_DRAFT.md, unconfirmed parts marked <Pending>.
+// Reached from Landing, Profile step 2 and RUNNING Main, or directly by link (test invitation), so "이전" falls back to "/".
 // Kept inside the onboarding frame (no app tabs) so "이전" returns to the form.
 import { useRouter } from "next/navigation";
 import { FlowFrame } from "@/components/onboarding/Flow";
 import { BackIcon } from "@/components/ui/icons";
 import { DeleteMyData } from "@/components/privacy/DeleteMyData";
+import { PrivacyNotice } from "@/components/privacy/PrivacyNotice";
 
 export default function PrivacyPage() {
   const router = useRouter();
+  const back = () => (window.history.length > 1 ? router.back() : router.push("/"));
   return (
     <FlowFrame>
       <div className="flex h-14 items-center px-6">
-        <button type="button" onClick={() => router.back()} className="-ml-2 flex h-11 items-center gap-2.5 px-2 text-[16px] font-bold">
+        <button type="button" onClick={back} className="-ml-2 flex h-11 items-center gap-2.5 px-2 text-[16px] font-bold">
           <BackIcon />
           이전
         </button>
       </div>
-      <main className="px-6 pt-6">
-        <h1 className="m-0 text-[30px] leading-[38px] font-extrabold tracking-[-0.02em]">개인정보 수집·이용 안내</h1>
-        <p className="mt-4 mb-0 text-[15px] leading-6 text-gm-g1">안내 문구가 아직 확정되지 않았어요. 확정되면 이 화면에 표시합니다.</p>
+      <main className="px-6 pt-6" style={{ paddingBottom: "max(32px, env(safe-area-inset-bottom))" }}>
+        <h1 className="m-0 text-[30px] leading-[38px] font-extrabold tracking-[-0.02em] break-keep">개인정보 수집·이용 안내</h1>
+        <PrivacyNotice />
         <DeleteMyData />
       </main>
     </FlowFrame>
