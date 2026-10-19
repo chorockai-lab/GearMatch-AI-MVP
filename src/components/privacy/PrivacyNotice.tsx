@@ -1,4 +1,5 @@
-// Privacy notice copy for /privacy — from docs/PRIVACY_NOTICE_DRAFT.md (operating policy confirmed 2026-10-19).
+// Privacy notice copy for /privacy — from docs/PRIVACY_NOTICE_DRAFT.md (operating policy confirmed 2026-10-19;
+// effective date, contact person, Supabase / Vercel regions and plans confirmed by the operator the same day).
 // Anything still waiting for legal / operating confirmation is wrapped in <Pending> so it is visibly marked
 // and easy to find (grep "<Pending") before this page goes to Production. Do not publish while any remain.
 // Facts here must match the code and DB: supabase/migrations/*.sql, src/lib/events/track.ts, src/lib/analytics/*.
@@ -58,6 +59,9 @@ export function PrivacyNotice() {
         초록소프트(ChoRockSoft)가 운영하는 GearMatch는 로그인 없이 쓰는 러닝 서비스입니다. 이름·이메일·전화번호·위치(GPS)는 받지 않습니다. 이 안내는
         서비스가 저장하는 정보와 그 이유, 삭제 방법을 설명합니다.
       </p>
+      <p className="mt-3 mb-0 text-[15px] leading-6 text-gm-g1 break-keep">
+        이 안내는 2026년 10월 19일 시작한 내부 테스트와 2026년 10월 21일 시작 예정인 외부 테스트에 적용됩니다.
+      </p>
 
       <Section n={1} title="저장하는 정보">
         <dl className="m-0">
@@ -96,14 +100,15 @@ export function PrivacyNotice() {
         <Bullets
           items={[
             <>
-              외부 테스트 종료일(2026년 11월 4일)로부터 <strong className="text-gm-tx">3개월</strong>(2027년 2월 4일)까지 보관한 뒤 삭제합니다.
+              외부 테스트 종료일(2026년 11월 4일 예정)로부터 <strong className="text-gm-tx">3개월</strong>(2027년 2월 4일)까지 보관한 뒤 삭제합니다.
             </>,
             <>
               법령에 따라 따로 보관해야 하는 정보가 있으면 그 기간을 따릅니다. <Pending>법적 검토</Pending>
             </>,
             <>
-              서비스 제공 회사의 접속 기록·백업은 각 회사의 보관 정책에 따라 일정 기간 남을 수 있습니다. <Pending>회사별 기간 확인</Pending>
+              서비스 제공 회사의 접속 기록은 각 회사의 보관 정책에 따라 일정 기간 남을 수 있습니다. <Pending>회사별 기간 확인</Pending>
             </>,
+            "데이터베이스 자동 백업 기능은 사용하지 않습니다.",
           ]}
         />
       </Section>
@@ -129,16 +134,12 @@ export function PrivacyNotice() {
           <div className="border-b border-gm-line py-3 first:pt-0">
             <dt className="text-[15px] font-bold text-gm-tx">Supabase Inc. (미국)</dt>
             <dd className="m-0 mt-1">데이터베이스·익명 로그인 — 1번의 정보 전체(접속 정보 포함)</dd>
-            <dd className="m-0 mt-1">
-              처리 지역: <Pending>확인 중</Pending>
-            </dd>
+            <dd className="m-0 mt-1">데이터베이스 위치: 대한민국 서울(ap-northeast-2)</dd>
           </div>
           <div className="border-b border-gm-line py-3">
             <dt className="text-[15px] font-bold text-gm-tx">Vercel Inc. (미국)</dt>
             <dd className="m-0 mt-1">웹사이트 제공(호스팅) — 접속 정보(IP·브라우저·요청 주소). 앱 데이터는 Vercel을 거치지 않고 Supabase로 바로 전송됩니다.</dd>
-            <dd className="m-0 mt-1">
-              처리 지역: <Pending>확인 중</Pending>
-            </dd>
+            <dd className="m-0 mt-1">서버 기능 실행 위치: 미국(iad1, 워싱턴 D.C.)</dd>
           </div>
           <div className="py-3 last:pb-0">
             <dt className="text-[15px] font-bold text-gm-tx">PostHog Inc. (미국)</dt>
@@ -162,6 +163,7 @@ export function PrivacyNotice() {
         <Bullets
           items={[
             "초록소프트(ChoRockSoft)",
+            "개인정보 실무담당자: 신사업기획파트 전진우 파트장",
             <>이메일: {PRIVACY_EMAIL}</>,
             <>
               개인정보 보호책임자: <Pending>지정 후 표시</Pending>
@@ -171,7 +173,7 @@ export function PrivacyNotice() {
       </Section>
 
       <Section n={9} title="시행일">
-        2026년 10월 21일 <Pending>실제 테스트 시작일로 확정</Pending>
+        2026년 10월 19일
       </Section>
     </div>
   );
