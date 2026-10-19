@@ -1,6 +1,8 @@
 // Runners Like You rules (src/lib/items/aggregate.ts) + import validation (scripts/items/validate.ts).
 // Fixtures below are hand-made test rows — not product data. Run: npm run test:items
-import { formatShare, MIN_RUNNERS, runnersLikeYou } from "../src/lib/items/aggregate";
+import { formatShare, itemsMatch, MIN_RUNNERS, runnersLikeYou } from "../src/lib/items/aggregate";
+import { detailView, EXAMPLE_BADGE, EXAMPLE_NOTICE, matchView, WIDE_NOTICE } from "../src/lib/items/view";
+import { DEFAULT_SEED, generateSeed, ID_PREFIX, seedSql, validateSeed } from "./items/seed";
 import type { ItemsDataset, MatchProfile, Product, SeedRunner } from "../src/lib/items/types";
 import { productsFromWorkbook, runnerShoesFromRows, runnersFromRows, runnersSql } from "./items/validate";
 
@@ -65,9 +67,75 @@ for (const k of ["height_cm", "weight_kg", "shoe_size_mm", "typical_run_distance
   check(r.status === "profile_missing" && r.runners === null && r.items.length === 0, `missing ${k} → profile_missing, no numbers`);
 }
 
-// DEMO flag only when a matched runner is DEMO
+// DEMO runners are never counted as real runners (the old function ignores them)
 const withDemo: ItemsDataset = { ...data, runners: data.runners.map((r) => (r.id === "R1" ? { ...r, data_source: "demo" } : r)) };
-check(runnersLikeYou(withDemo, me, "wide").demo === true && wide.demo === false, "demo flag reflects matched DEMO runners");
+const wd = runnersLikeYou(withDemo, me, "wide");
+check(wd.demo === false && wd.runners === 5, `runnersLikeYou ignores a DEMO runner (6 → ${wd.runners}, demo=${wd.demo})`);
+
+// ── itemsMatch: real base → real wide → example base → example wide → browse ──
+const tierOf = (ds: ItemsDataset, p: MatchProfile = me) => { const r = itemsMatch(ds, p); return `${r.status}/${r.range}`; };
+check(tierOf(data) === "real/wide", `4 real in base, 6 in wide → real/wide (${tierOf(data)})`);
+const fiveBase: ItemsDataset = { ...data, runners: [...data.runners, runner("R9", 172, 69, 270)], runner_shoes: [...data.runner_shoes, { runner_id: "R9", product_id: "P-C", run_count: null, total_km: null }] };
+check(tierOf(fiveBase) === "real/base", `5 real in base → real/base (${tierOf(fiveBase)})`);
+const demoOnly: ItemsDataset = { ...data, runners: data.runners.map((r) => ({ ...r, data_source: "demo" as const })) };
+check(tierOf(demoOnly) === "example/wide", `same runners as DEMO only → example/wide (${tierOf(demoOnly)})`);
+const ex = itemsMatch(demoOnly, me);
+check(ex.runners === null && ex.items.every((i) => i.runners === null && i.share === null && i.run_count === null && i.total_km === null), "example: no counts, shares or run data");
+check(ex.items.map((i) => i.display_name).join("|") === "Alpha One|Beta Two|Charlie Three", `example order is by name, not popularity (${ex.items.map((i) => i.display_name).join("|")})`);
+const demoBase: ItemsDataset = { ...fiveBase, runners: fiveBase.runners.map((r) => ({ ...r, data_source: "demo" as const })) };
+check(tierOf(demoBase) === "example/base", `5 DEMO in base → example/base (${tierOf(demoBase)})`);
+// real beats DEMO even when the DEMO group is closer / larger
+const both: ItemsDataset = { ...data, runners: [...data.runners, ...demoBase.runners.map((r) => ({ ...r, id: `X-${r.id}` }))], runner_shoes: [...data.runner_shoes, ...demoBase.runner_shoes.map((s) => ({ ...s, runner_id: `X-${s.runner_id}` }))] };
+const bm = itemsMatch(both, me);
+check(bm.status === "real" && bm.range === "wide" && bm.runners === 6, `real wide (6) wins over DEMO base (9) and is counted without DEMO (${bm.status}/${bm.range}/${bm.runners})`);
+check(JSON.stringify(bm.items.map((i) => [i.product_id, i.runners])) === JSON.stringify(itemsMatch(data, me).items.map((i) => [i.product_id, i.runners])), "real counts identical with or without DEMO rows");
+// browse: nobody close, or the profile is incomplete — always the active catalogue, no numbers
+const far = itemsMatch(data, { ...me, height_cm: 150, weight_kg: 45 });
+check(far.status === "browse" && far.profile_complete === true && far.items.length === 3 && far.items.every((i) => i.runners === null), "no group → browse lists the catalogue without numbers");
+const noFoot = itemsMatch(data, { ...me, shoe_size_mm: null });
+check(noFoot.status === "browse" && noFoot.profile_complete === false && noFoot.items.length === 3, "missing foot size → browse (profile_complete = false)");
+// a group whose products are all unknown / inactive falls through to the next tier
+const deadLinks: ItemsDataset = { ...demoBase, runner_shoes: demoBase.runner_shoes.map((s) => ({ ...s, product_id: "P-GONE" })) };
+check(tierOf(deadLinks) === "browse/null", `example without any active product → browse (${tierOf(deadLinks)})`);
+
+// ── view rules (what the screens may say) ────────────────────────────────────
+const vReal = matchView(itemsMatch(data, me));
+check(vReal.showNumbers && vReal.wideNotice && vReal.badge === null, "real wide: numbers shown, wide notice on");
+const vEx = matchView(ex);
+check(!vEx.showNumbers && vEx.badge === EXAMPLE_BADGE && vEx.notice === EXAMPLE_NOTICE && vEx.wideNotice, "example: no numbers, '예시 데이터' badge, disclaimer, wide notice");
+check(EXAMPLE_NOTICE.includes("가상 러너") && EXAMPLE_NOTICE.includes("실제 러너의 착용 기록이나 추천 결과는 아닙니다") && WIDE_NOTICE === "조금 더 넓은 조건에서 찾았어요.", "approved copy for the example notice and the wide notice");
+check(!/추천합니다|잘 맞|만족|최고|인기/.test(EXAMPLE_NOTICE + vEx.heading), "example copy makes no fit / satisfaction / popularity claim");
+const vBrowse = matchView(far);
+check(!vBrowse.showNumbers && vBrowse.notice === "아직 비슷한 조건의 러너 정보가 충분하지 않아요." && !vBrowse.needsProfile, "browse: no numbers, 'not enough runners' notice");
+check(matchView(noFoot).needsProfile && matchView(noFoot).notice === null, "browse with incomplete profile asks for the missing info");
+const dEx = detailView(ex, "P-A");
+const dReal = detailView(itemsMatch(data, me), "P-A");
+check(dEx.kind === "example" && dEx.included && !("share" in dEx), "detail of an example product: no share / count");
+check(dReal.kind === "real" && dReal.x === 3 && dReal.runners === 6 && dReal.wide, "detail of a real product: real count of the same group");
+check(detailView(far, "P-A").kind === "none", "detail while browsing: no numbers");
+
+// ── DEMO seed generator ─────────────────────────────────────────────────────
+const uses = ["DAILY", "LONG", "TEMPO", "RACE", "STABILITY"];
+const cat: Product[] = uses.flatMap((u) => [0, 1].map((k) => ({ ...product(`GM-${u}-${k}`, `Brand ${u}${k}`), primary_use: u, tags: [u] })));
+const g1 = generateSeed(cat, 300, DEFAULT_SEED);
+const g2 = generateSeed(cat, 300, DEFAULT_SEED);
+check(JSON.stringify(g1) === JSON.stringify(g2), "same seed → identical 300 runners and links (reproducible)");
+let seedOk = true;
+try { validateSeed(g1, new Set(cat.map((p) => p.id)), 300); } catch (e) { seedOk = false; console.log(String(e)); }
+check(seedOk, "300 runners: all demo, SEED-DEMO ids, DB ranges, 1–2 active shoes, no run data");
+const cells = new Map<string, number>();
+for (const r of g1.runners) cells.set(`${r.typical_run_distance}/${r.sex}`, (cells.get(`${r.typical_run_distance}/${r.sex}`) ?? 0) + 1);
+check(cells.size === 8 && Math.max(...cells.values()) - Math.min(...cells.values()) <= 1, `even split over 4 distances × 2 sexes (${[...cells.values()].join(",")})`);
+check(g1.runners.every((r) => r.id.startsWith(ID_PREFIX) && r.data_source === "demo") && g1.shoes.every((s) => s.run_count === null && s.total_km === null), "no invented run counts / km");
+const useOf = (id: string) => cat.find((p) => p.id === id)!.primary_use!;
+const longIds = new Set(g1.runners.filter((r) => r.typical_run_distance === "GTE_10").map((r) => r.id));
+check(g1.shoes.filter((s) => longIds.has(s.runner_id)).every((s) => ["LONG", "TEMPO", "RACE", "DAILY"].includes(useOf(s.product_id))), "10km+ runners link only long / tempo / race shoes (+ optional daily)");
+let badRejected = false;
+try { validateSeed({ ...g1, shoes: [...g1.shoes, { runner_id: g1.runners[0].id, product_id: "GM-NOPE", run_count: 3, total_km: 9 }] }, new Set(cat.map((p) => p.id)), 300); } catch { badRejected = true; }
+check(badRejected, "validator rejects unknown products and invented run data");
+const sql = seedSql(g1, { seed: DEFAULT_SEED, generatedAt: "test" });
+check(sql.includes("delete from public.seed_runners where data_source = 'demo';") && !/delete from public\.seed_runners;|truncate|data_source <> 'demo'/i.test(sql), "seed SQL replaces only demo rows");
+check((sql.match(/'demo'\)/g) ?? []).length === 300 && !/survey|partner|internal/.test(sql), "seed SQL inserts 300 demo rows and nothing else");
 
 // empty dataset (no Excel / DEMO off) → insufficient with 0, never invented
 const empty = runnersLikeYou({ products: [], runners: [], runner_shoes: [] }, me, "base");

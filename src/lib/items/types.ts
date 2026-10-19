@@ -63,6 +63,40 @@ export interface RunnersLikeYou {
   items: ShoeShare[]; // empty unless status = ok
 }
 
+/**
+ * What the ITEMS screen can show (public.items_match() / itemsMatch()), in this order:
+ *   real    — non-DEMO runners (base, then wide range): counts and shares are real
+ *   example — DEMO (synthetic) runners only (base, then wide): a product list with NO numbers
+ *   browse  — the active catalogue (also when the profile is incomplete): NO numbers
+ * Real and DEMO runners are never counted together.
+ */
+export type MatchStatus = "real" | "example" | "browse";
+
+/** A product in the ITEMS list. `runners` / `share` / `run_count` / `total_km` are set only when status = real. */
+export interface MatchItem {
+  product_id: string;
+  brand: string;
+  model_name: string;
+  display_name: string;
+  primary_use: string | null;
+  tags: string[];
+  image_url: string | null;
+  image_approved: boolean;
+  runners: number | null;
+  share: number | null;
+  run_count: number | null;
+  total_km: number | null;
+}
+
+export interface ItemsMatch {
+  status: MatchStatus;
+  range: Range | null; // which range found the group (real / example); null for browse
+  runners: number | null; // N real runners — only when status = real
+  min_runners: number;
+  profile_complete: boolean;
+  items: MatchItem[];
+}
+
 /** The four fields used for matching — from the user's own runner profile. */
 export interface MatchProfile {
   height_cm: number | null;

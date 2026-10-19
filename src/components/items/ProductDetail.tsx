@@ -1,25 +1,27 @@
 "use client";
 // Product Detail — UI handoff 08_ITEMS: product-detail · product-detail-saved. Saving keeps the user on this screen.
-// "RUNNERS LIKE YOU" numbers come from the same aggregate as the list (same range); no numbers when the group is too small.
+// "RUNNERS LIKE YOU" numbers come from the same items_match() result as the list — only for REAL runners.
+// DEMO-based examples and catalogue browsing show no counts, shares or run data (docs/ITEMS_COLD_START.md).
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatShare } from "@/lib/items/aggregate";
 import { itemsRepository } from "@/lib/items/repository";
-import type { MatchProfile, Product, Range } from "@/lib/items/types";
+import type { MatchProfile, Product } from "@/lib/items/types";
+import { detailView, EXAMPLE_BADGE, EXAMPLE_NOTICE } from "@/lib/items/view";
 import { track } from "@/lib/events/track";
 import { useTrackOnce } from "@/lib/events/useTrackOnce";
 import { ArrowIcon, BackIcon, BookmarkIcon } from "@/components/ui/icons";
 import { LoadFailedBlock, SaveFailedBanner } from "@/components/ui/Feedback";
 import { ShoeArt } from "./ShoeArt";
-import { DemoBadge, USE_LABEL, useRunnersLikeYou, useSaved } from "./parts";
+import { DemoBadge, USE_LABEL, useItemsMatch, useSaved } from "./parts";
 
-export function ProductDetail({ id, range, from, me }: { id: string; range: Range; from: string; me: MatchProfile }) {
+export function ProductDetail({ id, from, me }: { id: string; from: string; me: MatchProfile }) {
   const [product, setProduct] = useState<Product | null | undefined>(undefined);
   const [loadError, setLoadError] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
-  const { result: r } = useRunnersLikeYou(range, me);
+  const { result: r } = useItemsMatch(me);
   const { ids, toggle, busy, failed } = useSaved();
-  useTrackOnce("shoe_detail_view", { product_id: id, range, from }, product != null);
+  useTrackOnce("shoe_detail_view", { product_id: id, status: r?.status ?? null, range: r?.range ?? null, from }, product != null && r != null);
 
   useEffect(() => {
     let alive = true;
@@ -32,7 +34,7 @@ export function ProductDetail({ id, range, from, me }: { id: string; range: Rang
     };
   }, [id, attempt]);
 
-  const back = from === "saved" ? "/items/saved" : range === "wide" ? "/items?range=wide" : "/items";
+  const back = from === "saved" ? "/items/saved" : "/items";
   const top = (
     <Link href={back} className="-ml-1 flex h-14 items-center gap-3 px-6 font-[family-name:var(--font-bl)] text-[15px] font-bold tracking-[0.12em]">
       <BackIcon /> {from === "saved" ? "SAVED" : "ITEMS"}
@@ -49,10 +51,9 @@ export function ProductDetail({ id, range, from, me }: { id: string; range: Rang
     );
 
   const saved = ids.has(product.id);
-  const item = r?.status === "ok" ? r.items.find((i) => i.product_id === product.id) ?? null : null;
-  const x = item?.runners ?? 0;
-  const wide = range === "wide";
-  const group = wide ? "넓힌 그룹" : "비슷한 러너";
+  const d = r ? detailView(r, product.id) : null;
+  const item = d?.kind === "real" ? r!.items.find((i) => i.product_id === product.id) ?? null : null;
+  const group = d?.kind === "real" && d.wide ? "넓힌 그룹" : "비슷한 러너";
 
   async function onSave() {
     const res = await toggle(product!.id, product!);
@@ -74,27 +75,31 @@ export function ProductDetail({ id, range, from, me }: { id: string; range: Rang
         <section className="mt-6 border-t border-gm-line2 pt-5">
           <div className="flex items-center justify-between">
             <span className="gm-label">RUNNERS LIKE YOU</span>
-            {r?.demo && <DemoBadge data />}
+            {d?.kind === "example" && <DemoBadge text={EXAMPLE_BADGE} />}
           </div>
-          {!r ? (
+          {!d ? (
             <div className="h-24" aria-busy="true" />
-          ) : r.status === "ok" ? (
+          ) : d.kind === "real" ? (
             <>
               <div className="mt-2 flex items-end gap-3">
-                <span className="tabular font-[family-name:var(--font-bc)] text-[76px] leading-[0.9] font-extrabold">{formatShare(x / (r.runners ?? 1))}</span>
+                <span className="tabular font-[family-name:var(--font-bc)] text-[76px] leading-[0.9] font-extrabold">{formatShare(d.share)}</span>
                 <span className="pb-1 font-[family-name:var(--font-bl)] text-[12px] leading-4 font-bold tracking-[0.14em] text-gm-g1">
-                  {x} OF {r.runners}
+                  {d.x} OF {d.runners}
                   <br />
                   RUNNERS
                 </span>
               </div>
               <p className="mt-3 mb-0 text-[16px] leading-6 [word-break:keep-all]">
-                {x > 0 ? `${group} ${r.runners}명 중 ${x}명이 이 신발로 러닝을 기록했어요.` : `${group} ${r.runners}명 중 이 신발을 신은 러너는 아직 없어요.`}
+                {d.x > 0 ? `${group} ${d.runners}명 중 ${d.x}명이 이 신발로 러닝을 기록했어요.` : `${group} ${d.runners}명 중 이 신발을 신은 러너는 아직 없어요.`}
               </p>
             </>
+          ) : d.kind === "example" ? (
+            <p className="mt-3 mb-0 text-[15px] leading-6 text-gm-g1 [word-break:keep-all]">
+              {d.included ? `나와 비슷한 조건의 예시 목록에 있는 러닝화예요. ${EXAMPLE_NOTICE}` : `비슷한 조건의 실제 러너 정보가 아직 충분하지 않아요. ${EXAMPLE_NOTICE}`}
+            </p>
           ) : (
-            <p className="mt-3 mb-0 text-[15px] leading-6 text-gm-g1">
-              {r.status === "profile_missing" ? "키·체중·발 사이즈를 입력하면 비슷한 러너들의 사용 비율을 볼 수 있어요." : "아직 비교할 비슷한 러너가 충분하지 않아요."}
+            <p className="mt-3 mb-0 text-[15px] leading-6 text-gm-g1 [word-break:keep-all]">
+              {d.needsProfile ? "키·체중·발 사이즈를 입력하면 비슷한 러너 정보를 찾아볼 수 있어요." : "아직 비슷한 조건의 러너 정보가 충분하지 않아요."}
             </p>
           )}
         </section>
@@ -103,7 +108,6 @@ export function ProductDetail({ id, range, from, me }: { id: string; range: Rang
           <section className="mt-6 border-t border-gm-line2 pt-5">
             <div className="flex items-center justify-between">
               <span className="gm-label">HOW THEY RUN</span>
-              {r?.demo && <DemoBadge data />}
             </div>
             <div className="mt-3 grid grid-cols-2 gap-4">
               <div>
@@ -121,7 +125,7 @@ export function ProductDetail({ id, range, from, me }: { id: string; range: Rang
                 <span className="mt-1 block text-[13px] text-gm-g1">이 신발로 달린 총 거리</span>
               </div>
             </div>
-            <p className="mt-3 mb-0 text-[12px] text-gm-g2">{group} {x}명의 기록 합계</p>
+            <p className="mt-3 mb-0 text-[12px] text-gm-g2">{group} {item.runners}명의 기록 합계</p>
           </section>
         )}
 
