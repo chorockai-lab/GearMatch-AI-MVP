@@ -2,21 +2,37 @@
 // The event names and props are the same as the Supabase `events` rows (src/lib/events/track.ts);
 // this file only narrows them further for a third-party processor.
 
-/** off: nothing is sent · qa: only internal QA sessions (`?qa=1`) · all: every user (enable only after the privacy notice / consent decision) */
-export type PostHogMode = "off" | "qa" | "all";
+/**
+ * off: nothing is sent · qa: only internal QA sessions (`?qa=1`)
+ * consent: QA sessions + users who chose "동의" on /privacy (nothing is sent before that choice)
+ * all: every user except those who chose "거부" on /privacy
+ * consent / all only after the privacy notice and the legal basis are settled (docs/POSTHOG.md).
+ */
+export type PostHogMode = "off" | "qa" | "consent" | "all";
+
+/** The user's choice on /privacy; null = never chosen. */
+export type AnalyticsChoice = "granted" | "denied" | null;
 
 export function resolveMode(token: string | undefined, host: string | undefined, flag: string | undefined): PostHogMode {
   // A PostHog project API key always starts with "phc_". Anything else (a project id, a personal key "phx_", a typo)
   // would be accepted by the ingestion endpoint with HTTP 200 but land in no project — so stay off instead.
   if (!token || !/^phc_[A-Za-z0-9]+$/.test(token) || !host || !/^https:\/\//.test(host)) return "off";
-  return flag === "qa" || flag === "all" ? flag : "off";
+  return flag === "qa" || flag === "consent" || flag === "all" ? flag : "off";
 }
 
-/** Whether this browser's events may be sent. `denied` = the user opted out (only meaningful in "all"). */
-export function shouldSend(mode: PostHogMode, isQa: boolean, denied: boolean): boolean {
+/** Whether this browser's events may be sent. Internal QA sessions always send unless PostHog is off. */
+export function shouldSend(mode: PostHogMode, isQa: boolean, choice: AnalyticsChoice): boolean {
   if (mode === "off") return false;
-  if (mode === "qa") return isQa;
-  return !denied || isQa;
+  if (isQa) return true;
+  if (mode === "consent") return choice === "granted"; // opt-in: nothing before an explicit "동의"
+  if (mode === "all") return choice !== "denied"; // opt-out
+  return false; // qa
+}
+
+/** Whether PostHog may already hold events from this browser (so a data deletion should also flag them there). */
+export function mayHaveSent(mode: PostHogMode, isQa: boolean, choice: AnalyticsChoice): boolean {
+  if (mode === "off") return false;
+  return isQa || mode === "all" || choice !== null; // a past "동의" counts even if it was withdrawn later
 }
 
 /**

@@ -7,7 +7,13 @@
 // and easy to find (grep "<Pending") before this page goes to Production. Do not publish while any remain.
 // Facts here must match the code and DB: supabase/migrations/*.sql, src/lib/events/track.ts, src/lib/analytics/*.
 
+import { POSTHOG_MODE } from "@/lib/analytics/posthog";
+
 export const PRIVACY_EMAIL = "chorock@chorock.co.kr";
+
+/** PostHog receives regular users' events only in consent / all mode (qa = internal QA browsers only). */
+const POSTHOG_USERS = POSTHOG_MODE === "consent" || POSTHOG_MODE === "all";
+const POSTHOG_REFUSE = POSTHOG_MODE === "consent" ? "아래 ‘이용 통계 분석’에서 동의한 경우에만 보냅니다" : "아래 ‘이용 통계 분석’에서 ‘보내지 않기’를 고르면 보내지 않습니다";
 
 /** Marks text that is not confirmed yet (legal review / operating check). */
 function Pending({ children }: { children: React.ReactNode }) {
@@ -133,6 +139,14 @@ export function PrivacyNotice() {
               <Pending>처리 방법 법적 검토</Pending>
             </>,
             "브라우저 데이터만 지우면 이 기기에서 기록을 불러올 수 없게 될 뿐, 서버의 기록은 삭제되지 않습니다.",
+            ...(POSTHOG_USERS
+              ? [
+                  <>
+                    PostHog로 보낸 이용 기록: ‘내 데이터 삭제하기’를 누르면 삭제 요청 표시를 남기고, 운영자가 PostHog에서 삭제합니다. 처리 주기:{" "}
+                    <Pending>운영 확정</Pending>
+                  </>,
+                ]
+              : []),
           ]}
         />
       </Section>
@@ -153,7 +167,11 @@ export function PrivacyNotice() {
           </div>
           <div className="py-3 last:pb-0">
             <dt className="text-[15px] font-bold text-gm-tx">PostHog Inc.</dt>
-            <dd className="m-0 mt-1">이용 통계 분석 — 현재 이용자의 정보는 보내지 않습니다(내부 점검용으로만 사용).</dd>
+            <dd className="m-0 mt-1">
+              {POSTHOG_USERS
+                ? `이용 통계 분석 — 익명 ID, 이용 기록(허용된 항목만), 화면 경로, 브라우저·기기 종류. ${POSTHOG_REFUSE}.`
+                : "이용 통계 분석 — 현재 이용자의 정보는 보내지 않습니다(내부 점검용으로만 사용)."}
+            </dd>
           </div>
         </dl>
       </Section>
@@ -166,6 +184,20 @@ export function PrivacyNotice() {
             <dd className="m-0 mt-1">국가·시기·방법: 미국(iad1, 워싱턴 D.C.) — RUNNING·신발 상세 화면을 열 때 네트워크로 전송</dd>
             <dd className="m-0 mt-1">목적·보유 기간: 웹사이트 제공 · 요청 기록 1시간(현재 요금제 기준)</dd>
           </div>
+          {POSTHOG_USERS && (
+            <div className="border-b border-gm-line py-3">
+              <dt className="text-[15px] font-bold text-gm-tx">PostHog Inc. (미국 · privacy@posthog.com)</dt>
+              <dd className="m-0 mt-1">
+                항목: 익명 ID, 이용 기록(허용된 항목만 — 테스트 답변·키·체중 제외), 화면 경로, 브라우저·기기 종류, 접속 IP(저장하지 않도록 설정:{" "}
+                <Pending>설정 확인</Pending>)
+              </dd>
+              <dd className="m-0 mt-1">국가·시기·방법: 미국(PostHog US Cloud) — 서비스를 이용하는 동안 네트워크로 전송</dd>
+              <dd className="m-0 mt-1">
+                목적·보유 기간: 이용 통계 · <Pending>PostHog 보관 기간 확인</Pending>
+              </dd>
+              <dd className="m-0 mt-1">거부 방법·효과: {POSTHOG_REFUSE}. 거부해도 서비스 이용에는 영향이 없습니다.</dd>
+            </div>
+          )}
           <div className="py-3 last:pb-0">
             <dt className="text-[15px] font-bold text-gm-tx">Supabase Inc. (미국 · privacy@supabase.com)</dt>
             <dd className="m-0 mt-1">데이터베이스는 대한민국 서울에 있습니다. 운영 지원·네트워크 처리 과정에서 해외에서 처리되는 범위: <Pending>업체 확인</Pending></dd>
@@ -180,6 +212,7 @@ export function PrivacyNotice() {
       <Section n={9} title="자동 수집 장치">
         이 웹사이트는 쿠키를 설정하지 않습니다. 대신 브라우저 저장 공간에 익명 로그인 상태와 서비스 설정을 저장합니다. 브라우저 설정에서 사이트 데이터를 지우거나 막을 수
         있으며, 그러면 이 기기에서 기록을 이어서 볼 수 없습니다.
+        {POSTHOG_USERS && " 이용 통계 분석을 보내는 경우 PostHog 식별값도 브라우저 저장 공간에 저장합니다."}
       </Section>
 
       <Section n={10} title="안전성 확보 조치">

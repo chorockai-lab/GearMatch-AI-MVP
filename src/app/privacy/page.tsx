@@ -7,6 +7,7 @@ import { FlowFrame } from "@/components/onboarding/Flow";
 import { BackIcon } from "@/components/ui/icons";
 import { DeleteMyData } from "@/components/privacy/DeleteMyData";
 import { PrivacyNotice } from "@/components/privacy/PrivacyNotice";
+import { AnalyticsChoice } from "@/components/privacy/AnalyticsChoice";
 
 export default function PrivacyPage() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function PrivacyPage() {
       <main className="px-6 pt-6" style={{ paddingBottom: "max(32px, env(safe-area-inset-bottom))" }}>
         <h1 className="m-0 text-[30px] leading-[38px] font-extrabold tracking-[-0.02em] break-keep">개인정보 수집·이용 안내</h1>
         <PrivacyNotice />
+        <AnalyticsChoice />
         <DeleteMyData />
       </main>
     </FlowFrame>

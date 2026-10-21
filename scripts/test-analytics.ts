@@ -1,7 +1,7 @@
 // PostHog policy (src/lib/analytics/posthog-policy.ts). Run: npm run test:analytics
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { ALLOWED_PROPS, resolveMode, sanitizeProps, scrubEventProperties, shouldSend, stripUrl } from "../src/lib/analytics/posthog-policy";
+import { ALLOWED_PROPS, mayHaveSent, resolveMode, sanitizeProps, scrubEventProperties, shouldSend, stripUrl } from "../src/lib/analytics/posthog-policy";
 
 let failures = 0;
 const check = (ok: boolean, msg: string) => {
@@ -15,13 +15,18 @@ check(resolveMode(undefined, H, "all") === "off", "no token → off");
 check(resolveMode("phc_x", undefined, "all") === "off", "no host → off");
 check(resolveMode("phc_x", "http://insecure", "all") === "off", "non-https host → off");
 check(resolveMode("phc_x", H, undefined) === "off" && resolveMode("phc_x", H, "yes") === "off", "flag missing / unknown → off");
-check(resolveMode("phc_x", H, "qa") === "qa" && resolveMode("phc_x", H, "all") === "all", "qa / all");
+check(resolveMode("phc_x", H, "qa") === "qa" && resolveMode("phc_x", H, "all") === "all" && resolveMode("phc_x", H, "consent") === "consent", "qa / consent / all");
 check(resolveMode("ABCDefgh1234567890abcdefghijklmno", H, "qa") === "off", "token without phc_ (e.g. a project id) → off");
 check(resolveMode("phx_personalkey123", H, "qa") === "off", "personal API key (phx_) → off");
 check(resolveMode("phc_abc 123", H, "qa") === "off" && resolveMode('"phc_abc"', H, "qa") === "off", "token with spaces / quotes → off");
-check(!shouldSend("off", true, false), "off never sends (even QA)");
-check(shouldSend("qa", true, false) && !shouldSend("qa", false, false), "qa mode: QA sessions only");
-check(shouldSend("all", false, false) && !shouldSend("all", false, true), "all mode: everyone except opted-out");
+check(!shouldSend("off", true, null) && !shouldSend("off", false, "granted"), "off never sends (even QA, even granted)");
+check(shouldSend("qa", true, null) && !shouldSend("qa", false, null) && !shouldSend("qa", false, "granted"), "qa mode: QA sessions only (a choice does not widen it)");
+check(!shouldSend("consent", false, null) && !shouldSend("consent", false, "denied") && shouldSend("consent", false, "granted"), "consent mode: nothing before an explicit 동의, nothing after 거부");
+check(shouldSend("consent", true, null) && shouldSend("consent", true, "denied"), "consent mode: QA sessions still send (excluded by the qa filter)");
+check(shouldSend("all", false, null) && shouldSend("all", false, "granted") && !shouldSend("all", false, "denied"), "all mode: everyone except opted-out");
+check(!mayHaveSent("off", true, "granted") && !mayHaveSent("qa", false, null) && mayHaveSent("qa", true, null), "deletion flag: off never, qa only for QA browsers");
+check(!mayHaveSent("consent", false, null) && mayHaveSent("consent", false, "denied") && mayHaveSent("consent", false, "granted"), "deletion flag in consent mode: only if the user ever chose (withdrawn 동의 may have sent before)");
+check(mayHaveSent("all", false, null), "deletion flag in all mode: every browser");
 
 // ── props allowlist ─────────────────────────────────────────────────────────
 const s = sanitizeProps({
