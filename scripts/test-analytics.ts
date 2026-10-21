@@ -24,9 +24,11 @@ check(shouldSend("qa", true, null) && !shouldSend("qa", false, null) && !shouldS
 check(!shouldSend("consent", false, null) && !shouldSend("consent", false, "denied") && shouldSend("consent", false, "granted"), "consent mode: nothing before an explicit 동의, nothing after 거부");
 check(shouldSend("consent", true, null) && shouldSend("consent", true, "denied"), "consent mode: QA sessions still send (excluded by the qa filter)");
 check(shouldSend("all", false, null) && shouldSend("all", false, "granted") && !shouldSend("all", false, "denied"), "all mode: everyone except opted-out");
-check(!mayHaveSent("off", true, "granted") && !mayHaveSent("qa", false, null) && mayHaveSent("qa", true, null), "deletion flag: off never, qa only for QA browsers");
-check(!mayHaveSent("consent", false, null) && mayHaveSent("consent", false, "denied") && mayHaveSent("consent", false, "granted"), "deletion flag in consent mode: only if the user ever chose (withdrawn 동의 may have sent before)");
-check(mayHaveSent("all", false, null), "deletion flag in all mode: every browser");
+check(!mayHaveSent("off", true, true), "deletion flag: never when PostHog is off");
+check(!mayHaveSent("qa", false, false) && mayHaveSent("qa", true, false), "deletion flag in qa mode: QA browsers only");
+check(!mayHaveSent("consent", false, false), "deletion flag in consent mode: no PostHog request for a user who never sent (no 동의, or 거부 first)");
+check(mayHaveSent("consent", false, true), "deletion flag in consent mode: a user who sent before (동의, even if withdrawn later)");
+check(!mayHaveSent("all", false, false) && mayHaveSent("all", false, true), "deletion flag in all mode: only browsers that actually sent");
 
 // ── props allowlist ─────────────────────────────────────────────────────────
 const s = sanitizeProps({

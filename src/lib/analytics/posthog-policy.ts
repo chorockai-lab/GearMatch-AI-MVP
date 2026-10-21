@@ -29,10 +29,14 @@ export function shouldSend(mode: PostHogMode, isQa: boolean, choice: AnalyticsCh
   return false; // qa
 }
 
-/** Whether PostHog may already hold events from this browser (so a data deletion should also flag them there). */
-export function mayHaveSent(mode: PostHogMode, isQa: boolean, choice: AnalyticsChoice): boolean {
+/**
+ * Whether a data deletion should also flag this browser in PostHog: only when PostHog really received events from it —
+ * a QA browser, or one that captured at least once (`sentBefore`, recorded on the first capture). A consent-mode user
+ * who never agreed (or refused before anything was sent) causes no PostHog request at all, not even the SDK load.
+ */
+export function mayHaveSent(mode: PostHogMode, isQa: boolean, sentBefore: boolean): boolean {
   if (mode === "off") return false;
-  return isQa || mode === "all" || choice !== null; // a past "동의" counts even if it was withdrawn later
+  return isQa || sentBefore;
 }
 
 /**

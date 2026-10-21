@@ -123,9 +123,15 @@ Supabase 쪽 같은 지표는 `docs/ANALYTICS_QUERIES.md`(원본 기준, 교차 
 자동 수집(Autocapture·Pageview·Pageleave·Session Replay·Heatmap·Dead/Rage click·Web vitals·예외·Surveys·Feature flags) 꺼짐 · 속성 허용 목록 · 주소의 `?쿼리`·`#조각` 제거 · referrer를 Person 속성에 저장하지 않음(`save_referrer: false`). IP·위치는 위 4·5(콘솔 설정)로 처리.
 
 ### '내 데이터 삭제'와 PostHog
-- 브라우저에서는 PostHog 데이터를 직접 지울 수 없으므로, 삭제 직전에 그 사용자 Person에 `gm_deletion_requested = true`(날짜 `gm_deletion_requested_at`)를 표시하고 브라우저의 PostHog 식별값을 지웁니다(`flagPostHogDeletion`). 그 뒤 Supabase 삭제가 진행됩니다.
-- PostHog로 보냈을 수 있는 브라우저에서만 실행(QA, `all`, `consent`에서 한 번이라도 선택한 브라우저). 거부 상태였어도 이 표시 1건만 보내고 다시 거부 상태로 돌아갑니다.
-- **운영자 절차**: PostHog → Persons → 필터 `gm_deletion_requested` = true → 각 Person **Delete person (이벤트 포함)**. 주기는 7번에서 결정.
+브라우저에서는 PostHog 데이터를 지울 수 없어 **삭제는 운영자가 PostHog에서** 합니다. 두 겹으로 찾습니다.
+
+1. **삭제 요청 표시(빠른 경로, 보장 안 됨)** — 삭제 직전 그 사용자 Person에 `gm_deletion_requested = true`(`gm_deletion_requested_at` 날짜)를 보내고 브라우저의 PostHog 식별값을 지움(`flagPostHogDeletion`). **PostHog가 실제로 이 브라우저의 이벤트를 받은 적이 있을 때만**(QA 브라우저, 또는 한 번이라도 전송한 브라우저 — localStorage `gearmatch.analytics_sent`) 실행. 동의 방식에서 동의하지 않은 사용자는 SDK도 불러오지 않고 아무것도 보내지 않음. 거부 상태였어도 이미 보낸 적이 있으면 이 표시 1건만 보내고 다시 거부 상태로 돌아감.
+   - 누락될 수 있는 경우: 광고 차단기·네트워크 차단, PostHog SDK 로딩이 1.5초를 넘김, PostHog 수집 지연·제한, 다른 브라우저에서 만든 기록(그 브라우저에서 따로 삭제해야 함)
+2. **정기 대조(보장 경로)** — PostHog Person의 ID는 Supabase 익명 계정 ID와 같음. 주기마다(기간은 운영 확정):
+   - PostHog → SQL: `select distinct distinct_id from events where timestamp > now() - interval 180 day`
+   - Supabase SQL Editor: 위 목록 중 `auth.users`에 **없는** ID = 삭제된 계정 → PostHog Persons에서 각 ID 검색 → **Delete person (이벤트 포함)**
+   - 1번 표시가 있는 Person도 함께 삭제. ID 목록은 내부 작업용으로만 쓰고 저장소·문서에 남기지 않음
+- 이메일 삭제 요청은 이용자를 특정할 수단이 없어 PostHog에서도 개별 처리 불가(개인정보 안내 U-6과 같은 쟁점)
 
 ### 전환 순서 (승인 필요)
 1. 선결 조건 1~7 완료 → 이 PR·PR #37 병합 승인 → Production 배포(아직 `qa`라 화면·전송은 그대로, 안내문만 게시)

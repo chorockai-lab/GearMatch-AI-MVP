@@ -15,6 +15,15 @@ export const POSTHOG_MODE: PostHogMode = resolveMode(
 );
 
 const CONSENT_KEY = "gearmatch.analytics"; // "granted" | "denied" — the choice made on /privacy (none = never chosen)
+const SENT_KEY = "gearmatch.analytics_sent"; // "1" once this browser captured to PostHog — cleared by "내 데이터 삭제"
+
+function sentBefore(): boolean {
+  try {
+    return window.localStorage.getItem(SENT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 /** This browser's choice about PostHog usage statistics. */
 export function analyticsChoice(): AnalyticsChoice {
@@ -83,6 +92,11 @@ export function capturePostHog(name: string, props: Record<string, unknown>, use
         if (isQa) ph.setPersonProperties({ qa: true });
       }
       if (isQa) ph.register({ qa: true });
+      try {
+        window.localStorage.setItem(SENT_KEY, "1");
+      } catch {
+        /* storage blocked */
+      }
       ph.capture(name, sanitizeProps({ ...props, ...(isQa ? { qa: true } : {}) }));
     })
     .catch(() => {
@@ -92,11 +106,12 @@ export function capturePostHog(name: string, props: Record<string, unknown>, use
 
 /**
  * "내 데이터 삭제": PostHog has no client-side delete, so the person is flagged (`gm_deletion_requested`) for the
- * operator to delete in PostHog (docs/POSTHOG.md), then this browser forgets its PostHog identity.
- * Runs only if PostHog may hold events from this browser; never throws, never blocks the deletion for long.
+ * operator to delete in PostHog, then this browser forgets its PostHog identity. Best effort only (ad blocker, network,
+ * 1.5 s limit) — the operator's reconciliation in docs/POSTHOG.md also deletes PostHog persons whose Supabase account
+ * no longer exists. Runs only if PostHog really received events from this browser; never throws.
  */
 export async function flagPostHogDeletion(userId: string, isQa: boolean): Promise<void> {
-  if (typeof window === "undefined" || !mayHaveSent(POSTHOG_MODE, isQa, analyticsChoice())) return;
+  if (typeof window === "undefined" || !mayHaveSent(POSTHOG_MODE, isQa, sentBefore())) return;
   const work = load().then((ph) => {
     if (!ph) return;
     const optedOut = ph.has_opted_out_capturing();
