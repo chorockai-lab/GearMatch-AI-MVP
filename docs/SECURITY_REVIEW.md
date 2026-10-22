@@ -91,7 +91,7 @@
 | Supabase 요금제 | **Organization → Billing** | 보관 기간이 요금제로 정해짐 | 현재 요금제(Free/Pro/…) |
 | Supabase 로그 (API·DB·Auth) | **Logs** (Logs Explorer) | API·DB 로그 Free **1일** · Pro **7일** · Team 28일 · Enterprise 90일 | 요금제로 결정 |
 | Supabase 백업 | **Database → Backups** | Free **없음** · Pro **7일** · Team 14일 (일일 백업). PITR은 유료 추가 | 백업 목록이 있는지, 가장 오래된 날짜 |
-| Supabase 인증 기록 (DB 안) | SQL Editor — 아래 읽기 전용 쿼리 | `auth.sessions`에 접속 IP·브라우저가 저장될 수 있음(계정 삭제 시 함께 삭제). `auth.audit_log_entries`는 계정 삭제와 별개로 남을 수 있음 | 쿼리 결과 |
+| Supabase 인증 기록 (DB 안) | SQL Editor — 아래 읽기 전용 쿼리 | `auth.sessions`에 접속 IP·브라우저가 저장될 수 있음(계정 삭제 시 함께 삭제). `auth.audit_log_entries`는 계정 삭제와 별개로 남을 수 있음 | **확인 완료(2026-10-22): `audit_log_entries` 0건** |
 | Vercel 요금제·로그 | **Team Settings → Billing** · 프로젝트 **Logs** | Runtime Logs Hobby **1시간** · Pro **1일** (Observability Plus 30일) | 요금제, Log Drain 설정 여부(**Settings → Log Drains**, 없어야 기본 보관만 적용) |
 | Vercel Function Region | 프로젝트 **Settings → Functions → Function Regions** | 신규 프로젝트 기본값 **Washington, D.C., USA (`iad1`)**. 이 앱에서 서버 함수로 실행되는 화면은 신발 상세(`/items/[id]`) 하나, 나머지는 정적 화면(CDN) | 표시된 리전 |
 | PostHog | 외부 참여자 데이터 미전송(`qa` 모드) | — | 확인 불필요(모드 유지만) |

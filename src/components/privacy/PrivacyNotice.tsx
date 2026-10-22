@@ -11,6 +11,7 @@ import { POSTHOG_MODE } from "@/lib/analytics/posthog";
 import { CONSENT_VERSION } from "@/lib/analytics/posthog-policy";
 
 export const PRIVACY_EMAIL = "chorock@chorock.co.kr";
+export const PRIVACY_PHONE = "02-534-2007";
 
 /** PostHog receives regular users' events only in consent / all mode (qa = internal QA browsers only). */
 const POSTHOG_USERS = POSTHOG_MODE === "consent" || POSTHOG_MODE === "all";
@@ -253,9 +254,7 @@ export function PrivacyNotice() {
             "초록소프트(ChoRockSoft) 신사업기획파트",
             "개인정보 실무담당자: 전진우 파트장",
             <>이메일: {PRIVACY_EMAIL}</>,
-            <>
-              전화번호: <Pending>번호 확정 후 표시</Pending>
-            </>,
+            <>전화번호: {PRIVACY_PHONE}</>,
           ]}
         />
       </Section>
