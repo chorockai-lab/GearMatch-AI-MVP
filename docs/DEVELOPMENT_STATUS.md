@@ -253,7 +253,7 @@ QA 세션(`?qa=1`)·`test:rls`·`check:supabase`로 생긴 사용자/이벤트�
 - 시안 없는 최소 구현: Current Shoe "직접 입력", 개인정보 안내(`/privacy`), RUNNING "?" → 결과 다시 보기
 - Stats 문장의 시안 외 경우(이전 4주 0km, 감소, 동일, 페이스 비교) 문구 — 잠정 문구 사용 중
 - CURRENT MODE 산출 규칙, FIRST 10K 조건
-- `/privacy` 안내문(PR #37)·PostHog `consent` 모드(PR #40, 2026-10-22): 구현·테스트 완료, 병합·배포 대기 — 남은 `확정 전` 4곳(처리 근거·법정 보존·접근 불가 삭제·국외 이전 근거 — 모두 법무), 법무 검토 후 승인. 확정·확인(2026-10-22): 문의 전화 02-534-2007, PostHog IP 저장 차단·GeoIP Pause·Free, 인증 감사 기록 0건. Production은 `qa` 유지. 운영 절차 `docs/POSTHOG.md`
+- `/privacy` 안내문(PR #37)·PostHog `consent` 모드(PR #40, 2026-10-22): 구현·테스트 완료, 병합·배포 대기 — 2026-10-22 사내 개인정보 책임자가 남은 4곳과 랜딩 동의 문구를 최종 승인 → `확정 전` 표시 없음. 확정·확인(2026-10-22): 문의 전화 02-534-2007, PostHog IP 저장 차단·GeoIP Pause·Free, 인증 감사 기록 0건. Production은 `qa` 유지. 운영 절차 `docs/POSTHOG.md`
 
 ## GitHub
 

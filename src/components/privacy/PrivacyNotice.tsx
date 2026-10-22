@@ -3,8 +3,7 @@
 // Sections follow 개인정보 보호법 제30조 제1항 · 시행령 제31조 제1항; overseas transfer lists the 제28조의8 제2항 items.
 // Vendor facts: Vercel runtime logs 1 h on Hobby, Supabase logs 1 day on Free (vendor docs, 2026-10-19); /running and
 // /items/[id] are served by Vercel Functions in iad1 (x-vercel-id); the site sets no cookies.
-// Anything still waiting for legal / operating confirmation is wrapped in <Pending> so it is visibly marked
-// and easy to find (grep "<Pending") before this page goes to Production. Do not publish while any remain.
+// Remaining items approved by the in-house privacy officer on 2026-10-22 (approval sheet items 1–5, item 2 = 안 A).
 // Facts here must match the code and DB: supabase/migrations/*.sql, src/lib/events/track.ts, src/lib/analytics/*.
 
 import { POSTHOG_MODE } from "@/lib/analytics/posthog";
@@ -20,14 +19,6 @@ const POSTHOG_REFUSE =
     ? "첫 화면이나 아래 ‘이용 통계 분석’에서 두 항목(이용 통계 분석·국외 이전)에 모두 동의한 경우에만 보냅니다"
     : "아래 ‘이용 통계 분석’에서 ‘보내지 않기’를 고르면 보내지 않습니다";
 
-/** Marks text that is not confirmed yet (legal review / operating check). */
-function Pending({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="mx-0.5 inline-block border border-gm-lime px-1.5 text-[13px] leading-5 font-bold text-gm-lime">
-      확정 전 · {children}
-    </span>
-  );
-}
 
 function Section({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
@@ -109,9 +100,17 @@ export function PrivacyNotice() {
             "서비스 제공과 보안을 위한 접속 처리(접속 정보)",
           ]}
         />
-        <p className="mt-3 mb-0">
-          항목별 처리 근거(필수 항목 · 선택 항목 · 이용 기록·접속 정보): <Pending>법적 검토 후 표시</Pending>
-        </p>
+        <p className="mt-3 mb-0 font-bold text-gm-tx">항목별 처리 근거</p>
+        <div className="mt-2">
+          <Bullets
+            items={[
+              "익명 ID, 러닝 테스트 답변·결과, 러닝 습관, 신발, 러닝 기록: 서비스 제공(이용 계약 이행)에 필요한 범위에서 처리합니다.",
+              "이용 기록·접속 정보: 서비스 제공과 보안, 서비스 개선을 위한 통계 집계에 처리합니다.",
+              "신체 정보(키·체중·발 사이즈): 선택 항목입니다. 입력한 경우에만 비슷한 조건의 러닝화 정보를 보여 주는 데 쓰며, 입력하지 않아도 서비스를 이용할 수 있습니다.",
+              "PostHog 이용 통계 분석: 이용자가 별도로 동의한 경우에만 처리합니다.",
+            ]}
+          />
+        </div>
       </Section>
 
       <Section n={3} title="보유 기간">
@@ -122,9 +121,7 @@ export function PrivacyNotice() {
               예정일 2026년 11월 4일로부터 3개월).
             </>,
             "보유 기간 중에도 이용자가 삭제하거나 삭제를 요청하면 5번에 따라 삭제합니다.",
-            <>
-              법령에 따라 따로 보관해야 하는 정보가 있으면 그 근거와 항목, 기간을 이곳에 적고 그 기간만 보관합니다. <Pending>해당 여부 법적 검토</Pending>
-            </>,
+            "법령에 따라 별도로 보존해야 하는 정보는 없습니다. 모든 정보는 2027년 2월 4일까지 보관한 뒤 삭제합니다.",
             "서비스 제공 회사의 접속 기록 보관 기간(현재 요금제 기준): Vercel 요청 기록 1시간, Supabase 로그 1일. 각 회사가 보안 등을 위해 따로 보관하는 기록은 각 회사의 정책을 따릅니다.",
             "데이터베이스 자동 백업 기능은 사용하지 않습니다.",
           ]}
@@ -143,8 +140,9 @@ export function PrivacyNotice() {
               계정의 테스트 결과·러닝 습관·신체 정보·신발·러닝 기록·이용 기록이 모두 삭제되며 되돌릴 수 없습니다. 데이터를 만든 같은 브라우저(앱)에서 열어야 합니다.
             </>,
             <>
-              <strong className="text-gm-tx">이메일 문의:</strong> {PRIVACY_EMAIL} — 삭제 방법을 안내합니다. 데이터를 만든 브라우저(앱)를 더 이상 쓸 수 없는 경우의 처리:{" "}
-              <Pending>처리 방법 법적 검토</Pending>
+              <strong className="text-gm-tx">이메일 요청:</strong> 데이터를 만든 브라우저(앱)를 더 이상 쓸 수 없다면 이메일({PRIVACY_EMAIL})로 삭제를 요청할 수
+              있습니다. 운영자는 보내 주신 정보로 해당 익명 계정을 식별할 수 있는지 확인한 뒤 삭제합니다. 로그인 없이 쓰는 서비스라 계정을 식별할 수 없으면
+              개별 삭제를 처리할 수 없으며, 이 경우 그 사유를 회신합니다. 이때에도 정보는 2027년 2월 4일 보관 기간이 끝나면 함께 삭제됩니다.
             </>,
             "브라우저 데이터만 지우면 이 기기에서 기록을 불러올 수 없게 될 뿐, 서버의 기록은 삭제되지 않습니다.",
             ...(POSTHOG_USERS
@@ -211,16 +209,27 @@ export function PrivacyNotice() {
           )}
           <div className="py-3 last:pb-0">
             <dt className="text-[15px] font-bold text-gm-tx">Supabase Inc. (미국 · privacy@supabase.com)</dt>
+            <dd className="m-0 mt-1">항목: 1번의 정보</dd>
             <dd className="m-0 mt-1">
-              데이터베이스는 대한민국 서울(ap-northeast-2)에 있습니다. Supabase 공식 하위 처리자 목록(2026년 10월 12일 기준)에 따라 지원 업무는 Supabase
-              Inc.(미국), 호스팅·네트워크는 Amazon Web Services·Cloudflare·Google(미국 법인)이 맡으며, 이 과정에서 정보가 해외에서 처리·조회될 수 있습니다.
+              국가·시기·방법: 데이터베이스는 대한민국 서울(ap-northeast-2), 지원 업무와 하위 처리자는 미국 — 서비스 이용 중 네트워크 전송, 운영 지원 시 조회
+              (Supabase 공식 하위 처리자 목록 2026년 10월 12일 기준: 지원 Supabase Inc., 호스팅·네트워크 Amazon Web Services·Cloudflare·Google)
             </dd>
+            <dd className="m-0 mt-1">목적·보유 기간: 데이터베이스·익명 로그인 · 2027년 2월 4일까지</dd>
+            <dd className="m-0 mt-1">거부 방법·효과: 이용하지 않거나 5번에 따라 삭제할 수 있으며, 이 경우 서비스를 이용할 수 없습니다.</dd>
           </div>
         </dl>
         <p className="mt-3 mb-0">이전을 원하지 않으면 서비스를 이용하지 않거나 5번에 따라 삭제할 수 있으며, 이 경우 서비스를 이용할 수 없습니다.</p>
-        <p className="mt-3 mb-0">
-          국외 이전의 법적 근거: <Pending>법적 검토</Pending>
-        </p>
+        <p className="mt-3 mb-0 font-bold text-gm-tx">국외 이전의 근거</p>
+        <div className="mt-2">
+          <Bullets
+            items={[
+              ...(POSTHOG_USERS
+                ? ["PostHog Inc.(미국): 이용자의 별도 동의를 받은 경우에만 이전합니다(개인정보 보호법 제28조의8 제1항 제1호). 동의는 언제든 철회할 수 있습니다."]
+                : []),
+              "Supabase Inc.·Vercel Inc.(미국): 서비스 제공(이용 계약 이행)에 필요한 처리위탁·보관으로서, 이 안내에 이전 항목·국가·시기와 방법·받는 자·목적과 보유 기간·거부 방법을 공개하고 이전합니다(개인정보 보호법 제28조의8 제1항 제3호 가목).",
+            ]}
+          />
+        </div>
       </Section>
 
       <Section n={9} title="자동 수집 장치">

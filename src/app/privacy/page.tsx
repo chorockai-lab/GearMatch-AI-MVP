@@ -1,5 +1,5 @@
 "use client";
-// "개인정보 수집·이용 안내" — no handoff screen (MISSING); copy from docs/PRIVACY_NOTICE_DRAFT.md, unconfirmed parts marked <Pending>.
+// "개인정보 수집·이용 안내" — no handoff screen (MISSING); copy from docs/PRIVACY_NOTICE_DRAFT.md, final wording approved by the in-house privacy officer (2026-10-22).
 // Reached from Landing, Profile step 2 and RUNNING Main, or directly by link (test invitation), so "이전" falls back to "/".
 // Kept inside the onboarding frame (no app tabs) so "이전" returns to the form.
 import { useRouter } from "next/navigation";
