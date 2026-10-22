@@ -1,7 +1,7 @@
 // PostHog policy (src/lib/analytics/posthog-policy.ts). Run: npm run test:analytics
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { ALLOWED_PROPS, resolveMode, sanitizeProps, scrubEventProperties, shouldSend, stripUrl } from "../src/lib/analytics/posthog-policy";
+import { ALLOWED_PROPS, CONSENT_VERSION, effectiveChoice, mayHaveSent, resolveMode, sanitizeProps, scrubEventProperties, shouldSend, stripUrl, SUPABASE_ONLY_EVENTS } from "../src/lib/analytics/posthog-policy";
 
 let failures = 0;
 const check = (ok: boolean, msg: string) => {
@@ -15,13 +15,27 @@ check(resolveMode(undefined, H, "all") === "off", "no token → off");
 check(resolveMode("phc_x", undefined, "all") === "off", "no host → off");
 check(resolveMode("phc_x", "http://insecure", "all") === "off", "non-https host → off");
 check(resolveMode("phc_x", H, undefined) === "off" && resolveMode("phc_x", H, "yes") === "off", "flag missing / unknown → off");
-check(resolveMode("phc_x", H, "qa") === "qa" && resolveMode("phc_x", H, "all") === "all", "qa / all");
+check(resolveMode("phc_x", H, "qa") === "qa" && resolveMode("phc_x", H, "all") === "all" && resolveMode("phc_x", H, "consent") === "consent", "qa / consent / all");
 check(resolveMode("ABCDefgh1234567890abcdefghijklmno", H, "qa") === "off", "token without phc_ (e.g. a project id) → off");
 check(resolveMode("phx_personalkey123", H, "qa") === "off", "personal API key (phx_) → off");
 check(resolveMode("phc_abc 123", H, "qa") === "off" && resolveMode('"phc_abc"', H, "qa") === "off", "token with spaces / quotes → off");
-check(!shouldSend("off", true, false), "off never sends (even QA)");
-check(shouldSend("qa", true, false) && !shouldSend("qa", false, false), "qa mode: QA sessions only");
-check(shouldSend("all", false, false) && !shouldSend("all", false, true), "all mode: everyone except opted-out");
+check(!shouldSend("off", true, null) && !shouldSend("off", false, "granted"), "off never sends (even QA, even granted)");
+check(shouldSend("qa", true, null) && !shouldSend("qa", false, null) && !shouldSend("qa", false, "granted"), "qa mode: QA sessions only (a choice does not widen it)");
+check(!shouldSend("consent", false, null) && !shouldSend("consent", false, "denied") && shouldSend("consent", false, "granted"), "consent mode: nothing before an explicit 동의, nothing after 거부");
+check(shouldSend("consent", true, null) && shouldSend("consent", true, "denied"), "consent mode: QA sessions still send (excluded by the qa filter)");
+check(shouldSend("all", false, null) && shouldSend("all", false, "granted") && !shouldSend("all", false, "denied"), "all mode: everyone except opted-out");
+check(!mayHaveSent("off", true, true), "deletion flag: never when PostHog is off");
+check(!mayHaveSent("qa", false, false) && mayHaveSent("qa", true, false), "deletion flag in qa mode: QA browsers only");
+check(!mayHaveSent("consent", false, false), "deletion flag in consent mode: no PostHog request for a user who never sent (no 동의, or 거부 first)");
+check(mayHaveSent("consent", false, true), "deletion flag in consent mode: a user who sent before (동의, even if withdrawn later)");
+check(!mayHaveSent("all", false, false) && mayHaveSent("all", false, true), "deletion flag in all mode: only browsers that actually sent");
+const V = CONSENT_VERSION;
+check(effectiveChoice({ stats: null, transfer: null, version: null }) === null, "consent: nothing chosen → not decided (consent mode sends nothing)");
+check(effectiveChoice({ stats: "granted", transfer: null, version: V }) === null && effectiveChoice({ stats: null, transfer: "granted", version: V }) === null, "consent: one of the two items only → not decided (nothing sent)");
+check(effectiveChoice({ stats: "granted", transfer: "granted", version: V }) === "granted", "consent: both items under the current notice → granted");
+check(effectiveChoice({ stats: "granted", transfer: "granted", version: "2000-01-01" }) === null, "consent: agreed to an older notice version → must agree again");
+check(effectiveChoice({ stats: "granted", transfer: "denied", version: V }) === "denied" && effectiveChoice({ stats: "denied", transfer: "granted", version: V }) === "denied", "consent: either item withdrawn → denied");
+check(!shouldSend("consent", false, effectiveChoice({ stats: "granted", transfer: null, version: V })) && shouldSend("consent", false, effectiveChoice({ stats: "granted", transfer: "granted", version: V })), "consent mode sends only with both consents");
 
 // ── props allowlist ─────────────────────────────────────────────────────────
 const s = sanitizeProps({
@@ -68,9 +82,10 @@ walk("src");
 const used = new Set<string>();
 for (const f of files) {
   const src = readFileSync(f, "utf8");
-  for (const m of src.matchAll(/(?:track|useTrackOnce)\(\s*"[a-z_]+"\s*,\s*\{([^}]*)\}/g)) {
+  for (const m of src.matchAll(/(?:track|useTrackOnce)\(\s*"([a-z_]+)"\s*,\s*\{([^}]*)\}/g)) {
+    if (SUPABASE_ONLY_EVENTS.has(m[1])) continue; // never sent to PostHog
     // keys at the start or after a comma: `key: value` and shorthand `{ card, method }`
-    for (const k of m[1].matchAll(/(?:^|,)\s*([a-z_]+)\s*(?=[:,]|\s*$)/g)) used.add(k[1]);
+    for (const k of m[2].matchAll(/(?:^|,)\s*([a-z_]+)\s*(?=[:,]|\s*$)/g)) used.add(k[1]);
   }
 }
 const missing = [...used].filter((k) => !ALLOWED_PROPS.has(k));

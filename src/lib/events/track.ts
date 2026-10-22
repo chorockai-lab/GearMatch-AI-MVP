@@ -5,9 +5,12 @@
 //   • PostHog    : the same event is also sent to PostHog when NEXT_PUBLIC_POSTHOG_ENABLED allows it (lib/analytics/posthog.ts),
 //                  with the Supabase user id as distinct_id. The Supabase write never depends on PostHog.
 //   • Props must not contain personal data (no body measurements, no free text). Keep values small.
+//   • trackReliable(): for records that must not be lost (consent) — queued in this browser and retried until Supabase
+//     confirms the insert; Supabase only.
 import { STORAGE_MODE } from "@/lib/config";
 import { ensureUserId, getSupabase } from "@/lib/supabase/client";
 import { capturePostHog } from "@/lib/analytics/posthog";
+import { PENDING_EVENTS_KEY } from "@/lib/analytics/posthog-policy";
 
 export const EVENT_NAMES = [
   "app_open", // once per browser session (revisit metric)
@@ -34,6 +37,7 @@ export const EVENT_NAMES = [
   "shoe_unsave", // props: { product_id, from }
   "card_image_create", // props: { card: runner | stats } — a card PNG was generated (Issue #16)
   "card_share_result", // props: { card, method: create | share | download | longpress, result } — what really happened
+  "analytics_consent", // props: { stats, transfer: granted | denied | null, version, source: landing | privacy } — Supabase only (consent record)
 ] as const;
 export type EventName = (typeof EVENT_NAMES)[number];
 
@@ -55,10 +59,67 @@ export function isQaSession(): boolean {
   }
 }
 
+type Row = { name: EventName; props: Props; path: string; client_at: string };
+
+function readPending(): Row[] {
+  try {
+    const v = JSON.parse(window.localStorage.getItem(PENDING_EVENTS_KEY) ?? "[]");
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePending(rows: Row[]): void {
+  try {
+    if (rows.length) window.localStorage.setItem(PENDING_EVENTS_KEY, JSON.stringify(rows));
+    else window.localStorage.removeItem(PENDING_EVENTS_KEY);
+  } catch {
+    /* storage blocked — the row is tried once in this page only */
+  }
+}
+
+let flushing: Promise<void> | null = null;
+
+/** Sends queued must-keep rows until Supabase confirms them (3 tries per call; the queue survives reloads). */
+export function flushPendingEvents(): Promise<void> {
+  if (STORAGE_MODE !== "server" || typeof window === "undefined") return Promise.resolve();
+  const sb = getSupabase();
+  if (!sb || !readPending().length) return Promise.resolve();
+  flushing ??= (async () => {
+    try {
+      for (let failures = 0; failures < 3 && readPending().length; ) {
+        const rows = readPending();
+        try {
+          await ensureUserId();
+          const { error } = await sb.from("events").insert(rows);
+          if (error) throw error;
+          writePending(readPending().slice(rows.length)); // rows queued meanwhile stay for the next round
+        } catch {
+          failures++;
+          await new Promise((r) => setTimeout(r, 1000 * failures));
+        }
+      }
+    } finally {
+      flushing = null;
+    }
+  })();
+  return flushing;
+}
+
+/** A record that must not be lost (consent): queued first, removed only after Supabase confirms it. Never sent to PostHog. */
+export function trackReliable(name: EventName, props: Props = {}): Promise<void> {
+  if (STORAGE_MODE !== "server" || typeof window === "undefined") return Promise.resolve();
+  const qa = isQaSession();
+  writePending([...readPending(), { name, props: qa ? { ...props, qa: true } : props, path: window.location.pathname.slice(0, 200), client_at: new Date().toISOString() }]);
+  return flushPendingEvents();
+}
+
 export function track(name: EventName, props: Props = {}): void {
   if (STORAGE_MODE !== "server" || typeof window === "undefined") return;
   const sb = getSupabase();
   if (!sb) return;
+  void flushPendingEvents(); // a consent record left from an earlier failure goes first
   const qa = isQaSession();
   const row = { name, props: qa ? { ...props, qa: true } : props, path: window.location.pathname.slice(0, 200), client_at: new Date().toISOString() };
   void ensureUserId()

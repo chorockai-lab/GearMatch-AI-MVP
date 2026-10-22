@@ -5,11 +5,14 @@
 // No service role key is involved. A browser without a session is never signed in just to delete.
 import { STORAGE_MODE } from "@/lib/config";
 import { getSupabase } from "@/lib/supabase/client";
+import { flagPostHogDeletion } from "@/lib/analytics/posthog";
+import { isQaSession } from "@/lib/events/track";
 
 export type DeleteResult = "deleted" | "nothing" | "failed";
 
-/** QA marker and analytics choice are settings, not personal data — kept so a QA browser stays excluded from analytics. */
-const KEEP = new Set(["gearmatch.qa", "gearmatch.analytics"]);
+/** The QA marker is a setting, not personal data — kept so a QA browser stays excluded from analytics. The PostHog consent
+ * is forgotten: its Supabase record is deleted with the account, so the next account must agree again. */
+const KEEP = new Set(["gearmatch.qa"]);
 
 /** Storage keys of this app's data to forget after a deletion. */
 export function keysToForget(keys: string[]): string[] {
@@ -40,6 +43,8 @@ export async function deleteMyData(): Promise<DeleteResult> {
       forgetLocal();
       return "nothing";
     }
+    // PostHog copy of the usage events (if any): flag the person for the operator to delete — before the account is gone
+    await flagPostHogDeletion(data.session.user.id, isQaSession());
     const { error } = await sb.rpc("delete_my_data");
     if (error) return "failed";
     // The account no longer exists; supabase-js ignores the server's 403/404 and always removes this browser's session.

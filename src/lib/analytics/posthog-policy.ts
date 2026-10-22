@@ -2,21 +2,69 @@
 // The event names and props are the same as the Supabase `events` rows (src/lib/events/track.ts);
 // this file only narrows them further for a third-party processor.
 
-/** off: nothing is sent · qa: only internal QA sessions (`?qa=1`) · all: every user (enable only after the privacy notice / consent decision) */
-export type PostHogMode = "off" | "qa" | "all";
+/**
+ * off: nothing is sent · qa: only internal QA sessions (`?qa=1`)
+ * consent: QA sessions + users who chose "동의" on /privacy (nothing is sent before that choice)
+ * all: every user except those who chose "거부" on /privacy
+ * consent / all only after the privacy notice and the legal basis are settled (docs/POSTHOG.md).
+ */
+export type PostHogMode = "off" | "qa" | "consent" | "all";
+
+/** Effective choice for sending; null = not decided (nothing is sent in consent mode). */
+export type AnalyticsChoice = "granted" | "denied" | null;
+
+/**
+ * Version of the PostHog part of the privacy notice (purpose · items · 국외 이전 제28조의8 ② items) a consent refers to.
+ * Bump it whenever those items change: a consent given to an older version no longer counts, so users must agree again.
+ */
+export const CONSENT_VERSION = "2026-10-21";
+
+/** The two separate optional consents (landing / privacy page). Both must be granted under CONSENT_VERSION to send. */
+export type ConsentItem = "stats" | "transfer";
+export type ConsentValue = "granted" | "denied" | null;
+export interface ConsentState {
+  stats: ConsentValue; // 이용 통계 분석 (제15조 동의)
+  transfer: ConsentValue; // 미국 국외 이전 (제28조의8 ① 1호 별도 동의)
+  version: string | null; // CONSENT_VERSION when last granted
+}
+export const NO_CONSENT: ConsentState = { stats: null, transfer: null, version: null };
+
+export function effectiveChoice(c: ConsentState, current: string = CONSENT_VERSION): AnalyticsChoice {
+  if (c.stats === "denied" || c.transfer === "denied") return "denied";
+  if (c.stats === "granted" && c.transfer === "granted" && c.version === current) return "granted";
+  return null; // one item missing, or agreed to an older notice
+}
+
+/** Browser queue of must-keep Supabase rows (consent records) not yet confirmed by Supabase — see trackReliable(). */
+export const PENDING_EVENTS_KEY = "gearmatch.events_pending";
+
+/** Events kept in Supabase only — never sent to PostHog (the consent record itself). */
+export const SUPABASE_ONLY_EVENTS = new Set(["analytics_consent"]);
 
 export function resolveMode(token: string | undefined, host: string | undefined, flag: string | undefined): PostHogMode {
   // A PostHog project API key always starts with "phc_". Anything else (a project id, a personal key "phx_", a typo)
   // would be accepted by the ingestion endpoint with HTTP 200 but land in no project — so stay off instead.
   if (!token || !/^phc_[A-Za-z0-9]+$/.test(token) || !host || !/^https:\/\//.test(host)) return "off";
-  return flag === "qa" || flag === "all" ? flag : "off";
+  return flag === "qa" || flag === "consent" || flag === "all" ? flag : "off";
 }
 
-/** Whether this browser's events may be sent. `denied` = the user opted out (only meaningful in "all"). */
-export function shouldSend(mode: PostHogMode, isQa: boolean, denied: boolean): boolean {
+/** Whether this browser's events may be sent. Internal QA sessions always send unless PostHog is off. */
+export function shouldSend(mode: PostHogMode, isQa: boolean, choice: AnalyticsChoice): boolean {
   if (mode === "off") return false;
-  if (mode === "qa") return isQa;
-  return !denied || isQa;
+  if (isQa) return true;
+  if (mode === "consent") return choice === "granted"; // opt-in: nothing before an explicit "동의"
+  if (mode === "all") return choice !== "denied"; // opt-out
+  return false; // qa
+}
+
+/**
+ * Whether a data deletion should also flag this browser in PostHog: only when PostHog really received events from it —
+ * a QA browser, or one that captured at least once (`sentBefore`, recorded on the first capture). A consent-mode user
+ * who never agreed (or refused before anything was sent) causes no PostHog request at all, not even the SDK load.
+ */
+export function mayHaveSent(mode: PostHogMode, isQa: boolean, sentBefore: boolean): boolean {
+  if (mode === "off") return false;
+  return isQa || sentBefore;
 }
 
 /**

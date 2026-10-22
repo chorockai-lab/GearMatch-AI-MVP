@@ -4,6 +4,13 @@
 import { useState } from "react";
 import { deleteMyData } from "@/lib/privacy/deleteMyData";
 import { SaveFailedBanner } from "@/components/ui/Feedback";
+import { POSTHOG_MODE } from "@/lib/analytics/posthog";
+
+/** PostHog runs for regular users → its copy is deleted separately and later (docs/POSTHOG.md). */
+const POSTHOG_NOTE =
+  POSTHOG_MODE === "consent" || POSTHOG_MODE === "all"
+    ? " 이용 통계(PostHog)로 보낸 기록은 이 삭제와 별도로, 삭제 요청을 받아 운영자가 PostHog에서 지워요. 그래서 삭제 시점이 달라요(수시 처리, 주 1회 누락 점검)."
+    : "";
 
 type Phase = "idle" | "confirm" | "deleting" | "deleted" | "nothing";
 
@@ -34,6 +41,7 @@ export function DeleteMyData() {
           {phase === "deleted"
             ? "이 브라우저의 익명 계정과 테스트 결과·러닝 기록이 모두 삭제됐어요."
             : "이 브라우저에는 저장된 익명 계정이 없어요."}
+          {phase === "deleted" && POSTHOG_NOTE}
         </p>
         <button type="button" onClick={restart} className="mt-5 h-14 w-full border border-gm-line3 text-[16px] font-bold">
           처음 화면으로
@@ -46,8 +54,9 @@ export function DeleteMyData() {
     <section className="mt-10 border-t border-gm-line2 pt-6">
       <h2 className="m-0 text-[20px] font-extrabold">내 데이터 삭제</h2>
       <p className="mt-2 mb-0 text-[15px] leading-6 text-gm-g1 break-keep">
-        지금 이 브라우저(앱)에서 쓰는 익명 계정과 러닝 동물 결과·러닝 습관·신체 정보·신발·러닝 기록·이용 기록을 모두 삭제해요.
-        다른 브라우저나 앱에서 쓴 기록은 그곳에서 따로 삭제해야 해요.
+        지금 이 브라우저(앱)에서 쓰는 익명 계정과 러닝 동물 결과·러닝 습관·신체 정보·신발·러닝 기록·이용 기록을 GearMatch 서버에서 바로
+        삭제해요. 다른 브라우저나 앱에서 쓴 기록은 그곳에서 따로 삭제해야 해요.
+        {POSTHOG_NOTE}
       </p>
       <button
         type="button"
