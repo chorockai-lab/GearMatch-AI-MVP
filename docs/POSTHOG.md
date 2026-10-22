@@ -115,13 +115,13 @@ Supabase 쪽 같은 지표는 `docs/ANALYTICS_QUERIES.md`(원본 기준, 교차 
 |---|---|---|---|
 | 1 | PostHog 이용 통계 처리(제15조 동의)와 미국 이전(제28조의8 ① 1호 별도 동의) 방식이 이 구현(체크 2개, 고지 내용은 '자세히' → `/privacy` 8번)으로 충분한지 | 법무 | 미확정 |
 | 2 | 개인정보 안내(PR #37 + 이 PR) 게시 — 남은 `확정 전` 항목 해소 | 법무·사용자 승인 → 배포 | 미게시 |
-| 3 | PostHog Settings → Project → **Discard client IP data** 켜기 | 운영(콘솔) | 미확인 |
-| 4 | 위치 정보 제거: Data pipeline → GeoIP 변환 끄기 또는 Property filter로 `$geoip_*` 제거 | 운영(콘솔) | 미확인 |
-| 5 | PostHog 요금제 확인(공식 문서: 무료 1년·유료 7년 보관, **줄일 수 없음**) | 운영(콘솔) | 미확인 |
+| 3 | PostHog Settings → Project → **Discard client IP data** 켜기 | 운영(콘솔) | **완료**(2026-10-22, 사용자 확인) |
+| 4 | 위치 정보 제거: Data pipeline → GeoIP 변환 끄기 또는 Property filter로 `$geoip_*` 제거 | 운영(콘솔) | **완료** — GeoIP **Pause**(2026-10-22, 사용자 확인). 다시 켜지 않음 |
+| 5 | PostHog 요금제 확인(공식 문서: 무료 1년·유료 7년 보관, **줄일 수 없음**) | 운영(콘솔) | **완료** — Free → 이벤트 보관 1년(2026-10-22). 우리 보관 기한(2027-02-04)에 맞춰 직접 삭제(아래 보관 만료 정리) |
 | 6 | 삭제 요청 처리 결과 통지 등 **법정 기한** 확인(아래) | 법무 | 미확정 |
 
 ### 수집 최소화 (코드에서 이미 적용)
-자동 수집(Autocapture·Pageview·Pageleave·Session Replay·Heatmap·Dead/Rage click·Web vitals·예외·Surveys·Feature flags) 꺼짐 · 속성 허용 목록 · 주소의 `?쿼리`·`#조각` 제거 · referrer를 Person 속성에 저장하지 않음. IP·위치는 위 3·4(콘솔 설정).
+자동 수집(Autocapture·Pageview·Pageleave·Session Replay·Heatmap·Dead/Rage click·Web vitals·예외·Surveys·Feature flags) 꺼짐 · 속성 허용 목록 · 주소의 `?쿼리`·`#조각` 제거 · referrer를 Person 속성에 저장하지 않음. IP는 수신 시 받지만 저장하지 않음(Discard client IP data), 위치 정보 추출 중지(GeoIP Pause) — 2026-10-22 콘솔 설정 완료. 설정을 바꾸면 개인정보 안내 8번도 함께 수정.
 
 ### PostHog 삭제 운영 절차
 브라우저에서는 PostHog 데이터를 지울 수 없어 **운영자가 PostHog에서 삭제**합니다. PostHog Person ID = Supabase 익명 계정 ID.

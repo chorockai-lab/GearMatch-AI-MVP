@@ -195,8 +195,8 @@ export function PrivacyNotice() {
             <div className="border-b border-gm-line py-3">
               <dt className="text-[15px] font-bold text-gm-tx">PostHog Inc. (미국 · privacy@posthog.com)</dt>
               <dd className="m-0 mt-1">
-                항목: 익명 ID, 이용 기록(허용된 항목만 — 테스트 답변·키·체중 제외), 화면 경로, 브라우저·기기 종류, 접속 IP(저장하지 않도록 설정:{" "}
-                <Pending>설정 확인</Pending>)
+                항목: 익명 ID, 이용 기록(허용된 항목만 — 테스트 답변·키·체중 제외), 화면 경로, 브라우저·기기 종류, 접속 IP(전송 과정에서 받지만
+                PostHog에 저장하지 않도록 설정, 위치 정보 추출도 하지 않음)
               </dd>
               <dd className="m-0 mt-1">국가·시기·방법: 미국(PostHog US Cloud) — 서비스를 이용하는 동안 네트워크로 전송</dd>
               <dd className="m-0 mt-1">
