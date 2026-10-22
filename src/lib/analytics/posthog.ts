@@ -14,6 +14,7 @@ import {
   sanitizeProps,
   scrubEventProperties,
   shouldSend,
+  PENDING_EVENTS_KEY,
   SUPABASE_ONLY_EVENTS,
   type AnalyticsChoice,
   type ConsentState,
@@ -46,6 +47,15 @@ export function consentState(): ConsentState {
 /** The effective choice for sending (both consents under the current notice version). */
 export function analyticsChoice(): AnalyticsChoice {
   return effectiveChoice(consentState());
+}
+
+/** A consent record still waiting for Supabase — PostHog waits too, so no PostHog data exists without a stored consent. */
+function consentUnconfirmed(): boolean {
+  try {
+    return (JSON.parse(window.localStorage.getItem(PENDING_EVENTS_KEY) ?? "[]") as { name?: string }[]).some((r) => r?.name === "analytics_consent");
+  } catch {
+    return false;
+  }
 }
 
 function sentBefore(): boolean {
@@ -107,6 +117,7 @@ function load(): Promise<PostHog | null> {
 /** Sends one product event (already deduplicated by the caller) to PostHog when allowed. Never throws. */
 export function capturePostHog(name: string, props: Record<string, unknown>, userId: string, isQa: boolean): void {
   if (typeof window === "undefined" || SUPABASE_ONLY_EVENTS.has(name) || !shouldSend(POSTHOG_MODE, isQa, analyticsChoice())) return;
+  if (!isQa && POSTHOG_MODE === "consent" && consentUnconfirmed()) return;
   void load()
     .then((ph) => {
       if (!ph) return;

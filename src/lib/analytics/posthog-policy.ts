@@ -35,6 +35,9 @@ export function effectiveChoice(c: ConsentState, current: string = CONSENT_VERSI
   return null; // one item missing, or agreed to an older notice
 }
 
+/** Browser queue of must-keep Supabase rows (consent records) not yet confirmed by Supabase — see trackReliable(). */
+export const PENDING_EVENTS_KEY = "gearmatch.events_pending";
+
 /** Events kept in Supabase only — never sent to PostHog (the consent record itself). */
 export const SUPABASE_ONLY_EVENTS = new Set(["analytics_consent"]);
 

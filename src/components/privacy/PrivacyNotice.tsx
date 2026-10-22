@@ -210,7 +210,10 @@ export function PrivacyNotice() {
           )}
           <div className="py-3 last:pb-0">
             <dt className="text-[15px] font-bold text-gm-tx">Supabase Inc. (미국 · privacy@supabase.com)</dt>
-            <dd className="m-0 mt-1">데이터베이스는 대한민국 서울에 있습니다. 운영 지원·네트워크 처리 과정에서 해외에서 처리되는 범위: <Pending>업체 확인</Pending></dd>
+            <dd className="m-0 mt-1">
+              데이터베이스는 대한민국 서울(ap-northeast-2)에 있습니다. Supabase 공식 하위 처리자 목록(2026년 10월 12일 기준)에 따라 지원 업무는 Supabase
+              Inc.(미국), 호스팅·네트워크는 Amazon Web Services·Cloudflare·Google(미국 법인)이 맡으며, 이 과정에서 정보가 해외에서 처리·조회될 수 있습니다.
+            </dd>
           </div>
         </dl>
         <p className="mt-3 mb-0">이전을 원하지 않으면 서비스를 이용하지 않거나 5번에 따라 삭제할 수 있으며, 이 경우 서비스를 이용할 수 없습니다.</p>

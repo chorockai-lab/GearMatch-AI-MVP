@@ -41,7 +41,7 @@ async function browser() {
       pending.set(id, (m) => (m.error ? reject(new Error(`${method}: ${m.error.message}`)) : resolve(m.result)));
       ws.send(JSON.stringify({ id, method, params }));
     });
-  const b = { ph: [], sb: [], rpc: [], send };
+  const b = { ph: [], sb: [], rpc: [], send, failConsent: 0, failedConsent: 0 };
   const decode = (b64) => {
     const buf = Buffer.from(b64, "base64");
     let t;
@@ -74,6 +74,12 @@ async function browser() {
       if (r.method === "POST" && /\/rest\/v1\/events/.test(r.url) && r.postData) {
         const j = JSON.parse(r.postData);
         const rows = Array.isArray(j) ? j : [j];
+        if (b.failConsent > 0 && rows.some((row) => row.name === "analytics_consent")) {
+          b.failConsent--; // simulate a network failure of the consent record
+          b.failedConsent++;
+          await send("Fetch.failRequest", { requestId: m.params.requestId, errorReason: "Failed" });
+          return;
+        }
         for (const row of rows) {
           row.props = { ...(row.props ?? {}), qa: true };
           b.sb.push({ name: row.name, props: row.props });
@@ -196,6 +202,28 @@ async function browser() {
   const done = await b.deleteMyData();
   check(b.flags("deleted") === 1 && done === "데이터를 삭제했어요." && b.rpc.includes(200), `동의 중 삭제: one PostHog deletion flag (deleted) + Supabase account deleted (${b.flags("deleted")})`);
   check(await b.eval(`document.body.innerText.includes('PostHog')`), "삭제 화면: says the PostHog copy is deleted separately");
+  await b.close();
+}
+
+// 5. 동의 기록 저장 실패 → 재시도: PostHog waits until the consent record is stored in Supabase
+{
+  const b = await browser();
+  b.failConsent = 2;
+  await b.go("/");
+  await b.check(0);
+  await b.check(1);
+  await sleep(300);
+  await b.go("/test/1", 1500); // reload while the record is still failing
+  const early = b.events().length;
+  check(b.failedConsent >= 1 && early === 0, `기록 저장 실패 중: nothing sent to PostHog (${early}) — failed record attempts ${b.failedConsent}`);
+  await sleep(6000);
+  const stored = b.consentRows();
+  check(stored.length >= 2 && stored.at(-1).stats === "granted" && stored.at(-1).transfer === "granted", `재시도: both consent records stored in Supabase after the failures (${stored.length})`);
+  check((await b.eval(`localStorage.getItem('gearmatch.events_pending')`)) === null, "재시도: nothing left in the browser queue");
+  await b.go("/test/1", 6000);
+  check(b.events().includes("test_start"), `기록 저장 후: events now go to PostHog (${b.events().join(",")})`);
+  await b.deleteMyData();
+  check(b.rpc.includes(200), "기록 실패 시나리오 → 삭제: test account deleted");
   await b.close();
 }
 

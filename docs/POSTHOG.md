@@ -105,6 +105,7 @@ Supabase 쪽 같은 지표는 `docs/ANALYTICS_QUERIES.md`(원본 기준, 교차 
 
 ### 동의 기록 (증빙)
 - 동의·철회할 때마다 Supabase `events`에 `analytics_consent` 1행: `props = { stats, transfer: granted | denied | null, version, source: landing | privacy }` + 행의 `created_at`(시각)·`user_id`(익명 ID). **PostHog로는 보내지 않음**(`SUPABASE_ONLY_EVENTS`)
+- 저장 보장: 기록은 먼저 브라우저 대기열(`gearmatch.events_pending`)에 넣고 Supabase 저장이 확인될 때만 지움(실패 시 재시도, 새로고침 뒤에도 다음 이벤트 때 다시 보냄). **기록이 저장되기 전에는 PostHog로 아무것도 보내지 않음** → 동의 기록 없는 PostHog 데이터가 생기지 않음
 - 수정 가능성: 이용자는 자기 행을 **추가만** 가능(RLS: insert own, update·delete 정책 없음). 과거 기록을 고치거나 지울 수 없음. 운영자는 SQL Editor 권한으로 수정 가능 → 운영자 수정 금지를 운영 원칙으로 둠
 - 삭제 시: '내 데이터 삭제'가 계정과 함께 이 기록도 삭제(이후 처리 근거 소멸 — PostHog 측 기록도 아래 절차로 삭제). 브라우저의 동의 선택도 지워져 새 계정은 다시 동의해야 함
 - 조회(내부): `select created_at, props from public.events where name = 'analytics_consent' and user_id = '<ID>' order by created_at;` — ID는 개별 문의 대응 때만 사용, 저장소·문서에 남기지 않음
@@ -162,4 +163,4 @@ PostHog 보관 기간(공식: 무료 1년)은 우리 보관 기한보다 길고 
 
 ### 자동화 테스트
 - `npm run test:analytics` — 모드별 전송 조건, 두 동의·안내 버전, 삭제 요청 조건(단위)
-- `npm run e2e:consent` — 로컬 `consent` 빌드에서 동의 전 / 한 항목만 / 두 항목 / 철회 / 삭제 시나리오(18개 확인). PostHog 요청은 가로채 실제 전송 없음, Supabase 테스트 계정은 `qa` 표시 후 앱으로 삭제. 실행법은 파일 맨 위 주석
+- `npm run e2e:consent` — 로컬 `consent` 빌드에서 동의 전 / 한 항목만 / 두 항목 / 철회 / 삭제 / 동의 기록 저장 실패→재시도 시나리오. PostHog 요청은 가로채 실제 전송 없음, Supabase 테스트 계정은 `qa` 표시 후 앱으로 삭제. 실행법은 파일 맨 위 주석
