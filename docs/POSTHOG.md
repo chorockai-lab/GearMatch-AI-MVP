@@ -6,7 +6,7 @@ Supabase `events`(원본 기록)는 그대로 두고, **같은 제품 이벤트�
 
 | 항목 | 내용 |
 |---|---|
-| 보내는 이벤트 | `src/lib/events/track.ts`의 24종(2026-10-15 카드 이미지 2종 추가) — Supabase에 한 줄 쓸 때 같은 호출에서 PostHog로 1건 (중복 없음) |
+| 보내는 이벤트 | `src/lib/events/track.ts`의 24종(2026-10-15 카드 이미지 2종 추가) — 25번째 `analytics_consent`(동의 기록)는 Supabase 전용 — Supabase에 한 줄 쓸 때 같은 호출에서 PostHog로 1건 (중복 없음) |
 | 사용자 식별 | PostHog `distinct_id` = Supabase 익명 사용자 ID (`identify`) → 두 시스템에서 같은 사람 |
 | 끈 기능 | Autocapture · 자동 Pageview/Pageleave · Session Replay · Heatmap · Dead click · Rage click · Web vitals · 예외 수집 · Surveys · Feature flags |
 | 보내지 않는 것 | 키·체중·발 사이즈 값(입력 여부 true/false만), 테스트 답변 문구, 자유 입력, 사용자가 입력한 신발 이름, 주소의 `?쿼리`·`#조각`, 유입 경로(referrer) |
@@ -24,9 +24,10 @@ Supabase `events`(원본 기록)는 그대로 두고, **같은 제품 이벤트�
 | `NEXT_PUBLIC_POSTHOG_ENABLED` | `off`(기본·미설정) / `qa` / `consent` / `all` |
 
 - `qa`: 내부 QA 세션(`?qa=1`로 연 브라우저)만 PostHog로 보냄. **현재 Production 값**. 일반 사용자 이벤트가 PostHog에 없는 것이 정상
-- `consent`(동의 방식): QA 세션 + `/privacy`의 **이용 통계 분석**에서 `동의하기`를 누른 브라우저만. 선택 전·거부 후에는 아무것도 보내지 않음
+- `consent`(동의 방식, **채택 2026-10-21**): QA 세션 + **두 선택 동의(이용 통계 분석 · 미국 국외 이전)를 모두 한** 브라우저만. 동의는 랜딩 시작 버튼 아래 체크 2개 또는 `/privacy` **이용 통계 분석**에서. 선택 전·한 항목만·철회 후에는 아무것도 보내지 않음(SDK도 불러오지 않음). 동의 이전 이벤트는 소급 전송하지 않음 — 전체 퍼널은 Supabase 기준
 - `all`(거부 방식): 모든 사용자, `/privacy`에서 `보내지 않기`를 고른 브라우저는 제외
-- `consent`·`all`에서만 `/privacy`에 선택 영역과 PostHog 국외 이전 항목이 나타남(배포 모드에 맞춰 자동). 선택은 브라우저 localStorage `gearmatch.analytics`(`granted`/`denied`)
+- 랜딩 체크는 `consent`에서만, `/privacy` 선택 영역·PostHog 국외 이전 항목·삭제 화면의 PostHog 안내는 `consent`·`all`에서만 나타남(배포 모드에 맞춰 자동). `qa`(현재 Production)에서는 화면 변화 없음
+- 선택은 브라우저 localStorage `gearmatch.analytics`(`{stats, transfer, version}`)에 두고, 안내 버전(`CONSENT_VERSION`, `posthog-policy.ts`)이 바뀌면 이전 동의는 무효 → 다시 동의해야 전송
 - `consent`·`all`은 아래 **일반 사용자 전환** 선결 조건을 모두 마친 뒤에만 사용
 - `NEXT_PUBLIC_*`는 빌드 시 고정 → Vercel에서 값을 바꾸면 **Redeploy**
 
@@ -98,56 +99,67 @@ Remove-Item Env:POSTHOG_PERSONAL_API_KEY
 실제 사용자 데이터가 들어오기 전에는 차트가 비어 있습니다(가상 수치 없음).
 Supabase 쪽 같은 지표는 `docs/ANALYTICS_QUERIES.md`(원본 기준, 교차 확인용).
 
-## 일반 사용자 전환 (`consent` 또는 `all`) — 2026-10-21 준비, 미적용
+## 일반 사용자 전환 (`consent`) — 2026-10-21 구현, 미적용
 
-**왜 KPI 대시보드가 비어 있나**: Production이 `qa`라 일반 사용자 이벤트는 PostHog로 가지 않고(코드 의도대로), KPI 차트는 `qa is not set`으로 QA 이벤트를 뺍니다. 이미 Supabase에 쌓인 이벤트는 PostHog로 **소급되지 않습니다** — 전환 배포 이후의 신규 이벤트만 쌓입니다.
+**왜 KPI 대시보드가 비어 있나**: Production이 `qa`라 일반 사용자 이벤트는 PostHog로 가지 않고, KPI 차트는 `qa is not set`으로 QA 이벤트를 뺍니다. Supabase에 쌓인 이벤트는 PostHog로 **소급되지 않습니다**. `consent` 전환 후에도 PostHog에는 **두 항목에 동의한 시점 이후**의 이벤트만 있습니다(동의자 표본 — 전체 전환율은 Supabase `docs/ANALYTICS_QUERIES.md` 기준).
+
+### 동의 기록 (증빙)
+- 동의·철회할 때마다 Supabase `events`에 `analytics_consent` 1행: `props = { stats, transfer: granted | denied | null, version, source: landing | privacy }` + 행의 `created_at`(시각)·`user_id`(익명 ID). **PostHog로는 보내지 않음**(`SUPABASE_ONLY_EVENTS`)
+- 수정 가능성: 이용자는 자기 행을 **추가만** 가능(RLS: insert own, update·delete 정책 없음). 과거 기록을 고치거나 지울 수 없음. 운영자는 SQL Editor 권한으로 수정 가능 → 운영자 수정 금지를 운영 원칙으로 둠
+- 삭제 시: '내 데이터 삭제'가 계정과 함께 이 기록도 삭제(이후 처리 근거 소멸 — PostHog 측 기록도 아래 절차로 삭제). 브라우저의 동의 선택도 지워져 새 계정은 다시 동의해야 함
+- 조회(내부): `select created_at, props from public.events where name = 'analytics_consent' and user_id = '<ID>' order by created_at;` — ID는 개별 문의 대응 때만 사용, 저장소·문서에 남기지 않음
 
 ### 선결 조건 (모두 끝나야 Vercel 값 변경)
 | # | 항목 | 담당 | 상태 |
 |---|---|---|---|
-| 1 | PostHog 이용 통계의 **처리 근거**(동의 / 그 밖의 근거)와 **미국 이전 근거**(제28조의8 제1항 제1호 별도 동의 / 제3호 처리방침 공개) | 법무 | 미확정 |
-| 2 | 1의 결과로 모드 결정: 동의가 필요하면 `consent`, 아니면 `all` | 사용자 | 미확정 |
-| 3 | 개인정보 안내(`/privacy`, PR #37 + 이 변경) 게시 — PostHog 위탁·국외 이전 항목, 거부 방법 포함 | 사용자 승인 → 배포 | 미게시 |
-| 4 | PostHog 설정: Settings → Project → **Discard client IP data** 켜기 | 사용자(콘솔) | 미확인 |
-| 5 | 위치 정보 제거: Data pipeline → GeoIP 변환 끄기 또는 Property filter로 `$geoip_*` 제거 (IP를 버려도 GeoIP는 저장 전에 IP를 읽을 수 있음) | 사용자(콘솔) | 미확인 |
-| 6 | PostHog 데이터 보관 기간 확인 → 안내문에 기재 | 사용자(콘솔·요금제) | 미확인 |
-| 7 | PostHog 삭제 처리 주기 결정(아래 절차) → 안내문에 기재 | 운영 | 미확정 |
-
-### 처리 근거 문서화 (법무 결론 후 채움)
-| 구분 | 근거 | 이용자 권리 행사 |
-|---|---|---|
-| `consent`로 결정 시 | 동의(선택) — 동의 전 전송 없음 | `/privacy` 이용 통계 분석에서 언제든 철회 → 즉시 중단, 철회해도 서비스 이용 가능 |
-| `all`로 결정 시 | (법무가 정한 근거와 조문) | `/privacy`에서 `보내지 않기` → 즉시 중단 · 열람·삭제는 `chorock@chorock.co.kr` 또는 '내 데이터 삭제' |
+| 1 | PostHog 이용 통계 처리(제15조 동의)와 미국 이전(제28조의8 ① 1호 별도 동의) 방식이 이 구현(체크 2개, 고지 내용은 '자세히' → `/privacy` 8번)으로 충분한지 | 법무 | 미확정 |
+| 2 | 개인정보 안내(PR #37 + 이 PR) 게시 — 남은 `확정 전` 항목 해소 | 법무·사용자 승인 → 배포 | 미게시 |
+| 3 | PostHog Settings → Project → **Discard client IP data** 켜기 | 운영(콘솔) | 미확인 |
+| 4 | 위치 정보 제거: Data pipeline → GeoIP 변환 끄기 또는 Property filter로 `$geoip_*` 제거 | 운영(콘솔) | 미확인 |
+| 5 | PostHog 요금제 확인(공식 문서: 무료 1년·유료 7년 보관, **줄일 수 없음**) | 운영(콘솔) | 미확인 |
+| 6 | 삭제 요청 처리 결과 통지 등 **법정 기한** 확인(아래) | 법무 | 미확정 |
 
 ### 수집 최소화 (코드에서 이미 적용)
-자동 수집(Autocapture·Pageview·Pageleave·Session Replay·Heatmap·Dead/Rage click·Web vitals·예외·Surveys·Feature flags) 꺼짐 · 속성 허용 목록 · 주소의 `?쿼리`·`#조각` 제거 · referrer를 Person 속성에 저장하지 않음(`save_referrer: false`). IP·위치는 위 4·5(콘솔 설정)로 처리.
+자동 수집(Autocapture·Pageview·Pageleave·Session Replay·Heatmap·Dead/Rage click·Web vitals·예외·Surveys·Feature flags) 꺼짐 · 속성 허용 목록 · 주소의 `?쿼리`·`#조각` 제거 · referrer를 Person 속성에 저장하지 않음. IP·위치는 위 3·4(콘솔 설정).
 
-### '내 데이터 삭제'와 PostHog
-브라우저에서는 PostHog 데이터를 지울 수 없어 **삭제는 운영자가 PostHog에서** 합니다. 두 겹으로 찾습니다.
+### PostHog 삭제 운영 절차
+브라우저에서는 PostHog 데이터를 지울 수 없어 **운영자가 PostHog에서 삭제**합니다. PostHog Person ID = Supabase 익명 계정 ID.
 
-1. **삭제 요청 표시(빠른 경로, 보장 안 됨)** — 삭제 직전 그 사용자 Person에 `gm_deletion_requested = true`(`gm_deletion_requested_at` 날짜)를 보내고 브라우저의 PostHog 식별값을 지움(`flagPostHogDeletion`). **PostHog가 실제로 이 브라우저의 이벤트를 받은 적이 있을 때만**(QA 브라우저, 또는 한 번이라도 전송한 브라우저 — localStorage `gearmatch.analytics_sent`) 실행. 동의 방식에서 동의하지 않은 사용자는 SDK도 불러오지 않고 아무것도 보내지 않음. 거부 상태였어도 이미 보낸 적이 있으면 이 표시 1건만 보내고 다시 거부 상태로 돌아감.
-   - 누락될 수 있는 경우: 광고 차단기·네트워크 차단, PostHog SDK 로딩이 1.5초를 넘김, PostHog 수집 지연·제한, 다른 브라우저에서 만든 기록(그 브라우저에서 따로 삭제해야 함)
-2. **정기 대조(보장 경로)** — PostHog Person의 ID는 Supabase 익명 계정 ID와 같음. 주기마다(기간은 운영 확정):
-   - PostHog → SQL: `select distinct distinct_id from events where timestamp > now() - interval 180 day`
-   - Supabase SQL Editor: 위 목록 중 `auth.users`에 **없는** ID = 삭제된 계정 → PostHog Persons에서 각 ID 검색 → **Delete person (이벤트 포함)**
-   - 1번 표시가 있는 Person도 함께 삭제. ID 목록은 내부 작업용으로만 쓰고 저장소·문서에 남기지 않음
-- 이메일 삭제 요청은 이용자를 특정할 수단이 없어 PostHog에서도 개별 처리 불가(개인정보 안내 U-6과 같은 쟁점)
+**삭제 요청이 생기는 경우(자동)**: '내 데이터 삭제'(`gm_deletion_reason = deleted`) · 동의 철회(`withdrawn`). PostHog가 실제로 이 브라우저의 이벤트를 받은 적이 있을 때만 해당 Person에 `gm_deletion_requested = true`(`gm_deletion_requested_at` 날짜)를 보냄. 동의하지 않은 사용자는 PostHog 요청 자체가 없음. 광고 차단·네트워크 등으로 **누락될 수 있음** → 주 1회 대조로 보완.
 
-### 전환 순서 (승인 필요)
-1. 선결 조건 1~7 완료 → 이 PR·PR #37 병합 승인 → Production 배포(아직 `qa`라 화면·전송은 그대로, 안내문만 게시)
-2. **승인 후** Vercel → Settings → Environment Variables → Production `NEXT_PUBLIC_POSTHOG_ENABLED` = `consent` 또는 `all` → **Redeploy**
-3. 검증: 새 일반 브라우저(실제 휴대폰, `?qa=1` 없이)로 랜딩 → 테스트 → (consent면 `/privacy`에서 동의 후) → PostHog Activity에 `qa` 없는 이벤트 도착 확인 → KPI 대시보드에 표시 확인 → QA Monitor에는 안 보이는지 확인 → 검증 브라우저는 '내 데이터 삭제'로 정리하고 PostHog Person도 위 절차로 삭제
-4. 교차 검증(하루 뒤): 같은 기간 Supabase(QA 제외)와 PostHog(KPI) 이벤트별 사용자 수 비교 — PostHog가 적은 것은 정상(consent 미동의·거부·광고 차단기). PostHog가 Supabase보다 많으면 오류
+| 주기 | 할 일 |
+|---|---|
+| **수시**(운영자가 확인할 때마다, 최소 업무일 1회 권장) | PostHog → Persons → 필터 `gm_deletion_requested` = true → 각 Person **Delete person (이벤트 포함)** · 이메일 요청은 접수 기록(본인 확인 방법은 개인정보 안내 U-6 결정 전까지 처리 보류) |
+| **주 1회 누락 점검** | ① **삭제된 계정**: PostHog `select distinct distinct_id from events where timestamp > now() - interval 180 day` 목록 중 Supabase `auth.users`에 없는 ID → 삭제 ② **철회했는데 표시가 없는 계정**: Supabase에서 마지막 `analytics_consent`가 철회인 사용자 목록(아래 SQL) 중 PostHog에 Person이 남아 있는 ID → 삭제 ③ 처리 기록 작성 |
 
 ```sql
--- Supabase: 전환 시각 이후 이벤트별 사용자 수 (QA 제외). 전환 시각을 넣어 실행
-with qa_users as (
-  select distinct user_id from public.events where props->>'qa' = 'true' or name = 'rls_test'
-  union select id from auth.users where raw_user_meta_data ? 'qa'
-)
-select name, count(*) as events, count(distinct user_id) as users
-from public.events e
-where created_at >= timestamptz '2026-10-21 00:00+09' -- 전환 배포 시각으로 변경
-  and not exists (select 1 from qa_users q where q.user_id = e.user_id)
-group by name order by users desc;
+-- 주 1회 ②: 마지막 선택이 철회(어느 한 항목이라도 denied)인 사용자 ID (내부 대조용 — 결과를 저장소에 남기지 않음)
+select user_id
+from (
+  select distinct on (user_id) user_id, props
+  from public.events
+  where name = 'analytics_consent'
+  order by user_id, created_at desc
+) last
+where props->>'stats' = 'denied' or props->>'transfer' = 'denied';
 ```
+
+**완료 확인**: 삭제한 각 ID에 대해 PostHog SQL `select count() from events where distinct_id = '<ID>'` = 0, Persons 검색 결과 없음. **처리 기록**(날짜 · 경로[요청 표시/대조/이메일] · 건수 · 확인 결과)만 내부 문서에 남기고 ID는 남기지 않음. 익명 서비스라 이용자에게 완료를 개별 통지할 수단은 없음.
+
+**법정 기한**: 정정·삭제 요구의 처리·결과 통지 기한(개인정보 보호법 제36조, 시행령 제43조)과 동의 철회 시 파기 시점은 **법무 확인 필요**(2차 자료로는 시행령 제44조 처리정지 10일만 확인). 확인 전까지 내부 목표: 요청 표시 확인 즉시 처리, 늦어도 다음 주 점검 안에 완료.
+
+### 보관 만료 (2027-02-04) 정리
+PostHog 보관 기간(공식: 무료 1년)은 우리 보관 기한보다 길고 줄일 수 없으므로 직접 지웁니다.
+1. 만료 전: Vercel `NEXT_PUBLIC_POSTHOG_ENABLED=off` → Redeploy(새 전송 중단)
+2. 2027-02-04: PostHog 프로젝트의 모든 Person·이벤트 삭제 — Project settings → **Delete project**(프로젝트 전체) 또는 Persons 전체 삭제. 대시보드 정의는 `scripts/posthog/dashboards.mjs`로 다시 만들 수 있음
+3. 확인: PostHog SQL `select count() from events` = 0(또는 프로젝트 없음) · Supabase 일괄 삭제(개인정보 안내 U-8)와 같은 날 처리 기록 작성
+
+### 전환 순서 (승인 필요)
+1. 선결 조건 완료 → PR #37·이 PR 병합 승인 → Production 배포(아직 `qa`라 화면·전송은 그대로, 안내문만 게시)
+2. **승인 후** Vercel → Settings → Environment Variables → Production `NEXT_PUBLIC_POSTHOG_ENABLED` = `consent` → **Redeploy**
+3. 검증: 실제 휴대폰 일반 브라우저(`?qa=1` 없이)로 랜딩에서 두 항목 동의 → 테스트 → PostHog Activity에 `qa` 없는 이벤트 도착 → KPI 대시보드 표시 → QA Monitor에는 안 보임 → 검증 브라우저는 '내 데이터 삭제' 후 PostHog Person도 위 절차로 삭제
+4. 교차 검증(하루 뒤): 같은 기간 Supabase(QA 제외)와 PostHog(KPI) 이벤트별 사용자 수 비교 — PostHog ≤ Supabase가 정상(동의자만). PostHog가 많으면 오류. 동의율 = Supabase `analytics_consent`(두 항목 granted) 사용자 수 ÷ 방문 사용자 수
+
+### 자동화 테스트
+- `npm run test:analytics` — 모드별 전송 조건, 두 동의·안내 버전, 삭제 요청 조건(단위)
+- `npm run e2e:consent` — 로컬 `consent` 빌드에서 동의 전 / 한 항목만 / 두 항목 / 철회 / 삭제 시나리오(18개 확인). PostHog 요청은 가로채 실제 전송 없음, Supabase 테스트 계정은 `qa` 표시 후 앱으로 삭제. 실행법은 파일 맨 위 주석

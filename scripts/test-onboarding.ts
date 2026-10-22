@@ -65,10 +65,10 @@ check(saveTarget(UA.androidChrome) === "download" && saveTarget(UA.samsung) === 
 check(saveTarget(UA.kakaoIos) === "longpress" && saveTarget(UA.kakaoAndroid) === "longpress", "이미지 저장 in KakaoTalk → preview + long-press");
 check(cardFilename("runner", new Date(2026, 9, 5)) === "gearmatch-runner-card-20261005.png" && cardFilename("stats", new Date(2026, 11, 31)) === "gearmatch-stats-card-20261231.png", "card PNG file name");
 
-const stored = ["gearmatch.onboarding.v1", "gearmatch.runs.v1", "gearmatch.saved.v1", "gearmatch.app_open", "gearmatch.qa", "gearmatch.analytics", "sb-x-auth-token", "ph_phc_x_posthog"];
+const stored = ["gearmatch.onboarding.v1", "gearmatch.runs.v1", "gearmatch.saved.v1", "gearmatch.app_open", "gearmatch.qa", "gearmatch.analytics", "gearmatch.analytics_sent", "sb-x-auth-token", "ph_phc_x_posthog"];
 check(
-  JSON.stringify(keysToForget(stored)) === JSON.stringify(["gearmatch.onboarding.v1", "gearmatch.runs.v1", "gearmatch.saved.v1", "gearmatch.app_open"]),
-  "data deletion forgets app data keys, keeps QA marker / analytics choice, leaves other keys to the auth / analytics SDKs",
+  JSON.stringify(keysToForget(stored)) === JSON.stringify(["gearmatch.onboarding.v1", "gearmatch.runs.v1", "gearmatch.saved.v1", "gearmatch.app_open", "gearmatch.analytics", "gearmatch.analytics_sent"]),
+  "data deletion forgets app data + PostHog consent (the new account starts without consent), keeps the QA marker, leaves other keys to the auth / analytics SDKs",
 );
 
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);

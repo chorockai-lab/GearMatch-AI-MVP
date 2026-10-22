@@ -8,12 +8,16 @@
 // Facts here must match the code and DB: supabase/migrations/*.sql, src/lib/events/track.ts, src/lib/analytics/*.
 
 import { POSTHOG_MODE } from "@/lib/analytics/posthog";
+import { CONSENT_VERSION } from "@/lib/analytics/posthog-policy";
 
 export const PRIVACY_EMAIL = "chorock@chorock.co.kr";
 
 /** PostHog receives regular users' events only in consent / all mode (qa = internal QA browsers only). */
 const POSTHOG_USERS = POSTHOG_MODE === "consent" || POSTHOG_MODE === "all";
-const POSTHOG_REFUSE = POSTHOG_MODE === "consent" ? "아래 ‘이용 통계 분석’에서 동의한 경우에만 보냅니다" : "아래 ‘이용 통계 분석’에서 ‘보내지 않기’를 고르면 보내지 않습니다";
+const POSTHOG_REFUSE =
+  POSTHOG_MODE === "consent"
+    ? "첫 화면이나 아래 ‘이용 통계 분석’에서 두 항목(이용 통계 분석·국외 이전)에 모두 동의한 경우에만 보냅니다"
+    : "아래 ‘이용 통계 분석’에서 ‘보내지 않기’를 고르면 보내지 않습니다";
 
 /** Marks text that is not confirmed yet (legal review / operating check). */
 function Pending({ children }: { children: React.ReactNode }) {
@@ -86,6 +90,9 @@ export function PrivacyNotice() {
           <Bullets
             items={[
               "카드 이미지(이미지 저장)는 이용자의 기기에서 만들어지며 서버로 보내지 않습니다.",
+              ...(POSTHOG_USERS
+                ? ["이용 통계 분석 동의·철회 기록(선택 내용, 안내 버전, 시각, 선택한 화면)을 저장합니다. 이 기록은 고칠 수 없고, 내 데이터를 삭제하면 함께 삭제됩니다."]
+                : []),
               "브라우저 저장 공간에는 익명 로그인 상태와 서비스 설정이 저장됩니다.",
             ]}
           />
@@ -142,9 +149,8 @@ export function PrivacyNotice() {
             ...(POSTHOG_USERS
               ? [
                   <>
-                    PostHog로 보낸 이용 기록은 바로 지워지지 않습니다. 운영자가 정기적으로 삭제된 계정을 확인해 PostHog에서도 삭제하며, ‘내 데이터
-                    삭제하기’를 누르면 삭제 요청 표시도 함께 보냅니다(광고 차단 등으로 표시가 전달되지 않아도 정기 확인 때 삭제합니다). 삭제까지 걸리는
-                    기간: <Pending>운영 확정</Pending>
+                    PostHog로 보낸 이용 기록은 GearMatch 서버 기록과 삭제 시점이 다릅니다. ‘내 데이터 삭제하기’를 누르거나 동의를 철회하면 삭제 요청을
+                    함께 보내고, 운영자가 수시로 PostHog에서 삭제합니다. 광고 차단 등으로 요청이 전달되지 않은 경우를 찾기 위해 주 1회 점검합니다.
                   </>,
                 ]
               : []),
@@ -194,9 +200,12 @@ export function PrivacyNotice() {
               </dd>
               <dd className="m-0 mt-1">국가·시기·방법: 미국(PostHog US Cloud) — 서비스를 이용하는 동안 네트워크로 전송</dd>
               <dd className="m-0 mt-1">
-                목적·보유 기간: 이용 통계 · <Pending>PostHog 보관 기간 확인</Pending>
+                목적·보유 기간: 이용 통계 · 동의를 철회하거나 데이터를 삭제하면 운영자가 삭제하며, 늦어도 2027년 2월 4일에 모두 삭제합니다
               </dd>
-              <dd className="m-0 mt-1">거부 방법·효과: {POSTHOG_REFUSE}. 거부해도 서비스 이용에는 영향이 없습니다.</dd>
+              <dd className="m-0 mt-1">
+                거부 방법·효과: {POSTHOG_REFUSE}. 동의하지 않거나 철회해도 서비스 이용에는 영향이 없습니다.
+              </dd>
+              <dd className="m-0 mt-1 text-[14px] text-gm-g2">안내 버전 {CONSENT_VERSION}</dd>
             </div>
           )}
           <div className="py-3 last:pb-0">

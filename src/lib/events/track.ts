@@ -34,6 +34,7 @@ export const EVENT_NAMES = [
   "shoe_unsave", // props: { product_id, from }
   "card_image_create", // props: { card: runner | stats } — a card PNG was generated (Issue #16)
   "card_share_result", // props: { card, method: create | share | download | longpress, result } — what really happened
+  "analytics_consent", // props: { stats, transfer: granted | denied | null, version, source: landing | privacy } — Supabase only (consent record)
 ] as const;
 export type EventName = (typeof EVENT_NAMES)[number];
 

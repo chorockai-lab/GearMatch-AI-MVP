@@ -10,8 +10,33 @@
  */
 export type PostHogMode = "off" | "qa" | "consent" | "all";
 
-/** The user's choice on /privacy; null = never chosen. */
+/** Effective choice for sending; null = not decided (nothing is sent in consent mode). */
 export type AnalyticsChoice = "granted" | "denied" | null;
+
+/**
+ * Version of the PostHog part of the privacy notice (purpose · items · 국외 이전 제28조의8 ② items) a consent refers to.
+ * Bump it whenever those items change: a consent given to an older version no longer counts, so users must agree again.
+ */
+export const CONSENT_VERSION = "2026-10-21";
+
+/** The two separate optional consents (landing / privacy page). Both must be granted under CONSENT_VERSION to send. */
+export type ConsentItem = "stats" | "transfer";
+export type ConsentValue = "granted" | "denied" | null;
+export interface ConsentState {
+  stats: ConsentValue; // 이용 통계 분석 (제15조 동의)
+  transfer: ConsentValue; // 미국 국외 이전 (제28조의8 ① 1호 별도 동의)
+  version: string | null; // CONSENT_VERSION when last granted
+}
+export const NO_CONSENT: ConsentState = { stats: null, transfer: null, version: null };
+
+export function effectiveChoice(c: ConsentState, current: string = CONSENT_VERSION): AnalyticsChoice {
+  if (c.stats === "denied" || c.transfer === "denied") return "denied";
+  if (c.stats === "granted" && c.transfer === "granted" && c.version === current) return "granted";
+  return null; // one item missing, or agreed to an older notice
+}
+
+/** Events kept in Supabase only — never sent to PostHog (the consent record itself). */
+export const SUPABASE_ONLY_EVENTS = new Set(["analytics_consent"]);
 
 export function resolveMode(token: string | undefined, host: string | undefined, flag: string | undefined): PostHogMode {
   // A PostHog project API key always starts with "phc_". Anything else (a project id, a personal key "phx_", a typo)

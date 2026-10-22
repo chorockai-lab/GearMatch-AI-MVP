@@ -1,7 +1,7 @@
 // PostHog policy (src/lib/analytics/posthog-policy.ts). Run: npm run test:analytics
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { ALLOWED_PROPS, mayHaveSent, resolveMode, sanitizeProps, scrubEventProperties, shouldSend, stripUrl } from "../src/lib/analytics/posthog-policy";
+import { ALLOWED_PROPS, CONSENT_VERSION, effectiveChoice, mayHaveSent, resolveMode, sanitizeProps, scrubEventProperties, shouldSend, stripUrl, SUPABASE_ONLY_EVENTS } from "../src/lib/analytics/posthog-policy";
 
 let failures = 0;
 const check = (ok: boolean, msg: string) => {
@@ -29,6 +29,13 @@ check(!mayHaveSent("qa", false, false) && mayHaveSent("qa", true, false), "delet
 check(!mayHaveSent("consent", false, false), "deletion flag in consent mode: no PostHog request for a user who never sent (no 동의, or 거부 first)");
 check(mayHaveSent("consent", false, true), "deletion flag in consent mode: a user who sent before (동의, even if withdrawn later)");
 check(!mayHaveSent("all", false, false) && mayHaveSent("all", false, true), "deletion flag in all mode: only browsers that actually sent");
+const V = CONSENT_VERSION;
+check(effectiveChoice({ stats: null, transfer: null, version: null }) === null, "consent: nothing chosen → not decided (consent mode sends nothing)");
+check(effectiveChoice({ stats: "granted", transfer: null, version: V }) === null && effectiveChoice({ stats: null, transfer: "granted", version: V }) === null, "consent: one of the two items only → not decided (nothing sent)");
+check(effectiveChoice({ stats: "granted", transfer: "granted", version: V }) === "granted", "consent: both items under the current notice → granted");
+check(effectiveChoice({ stats: "granted", transfer: "granted", version: "2000-01-01" }) === null, "consent: agreed to an older notice version → must agree again");
+check(effectiveChoice({ stats: "granted", transfer: "denied", version: V }) === "denied" && effectiveChoice({ stats: "denied", transfer: "granted", version: V }) === "denied", "consent: either item withdrawn → denied");
+check(!shouldSend("consent", false, effectiveChoice({ stats: "granted", transfer: null, version: V })) && shouldSend("consent", false, effectiveChoice({ stats: "granted", transfer: "granted", version: V })), "consent mode sends only with both consents");
 
 // ── props allowlist ─────────────────────────────────────────────────────────
 const s = sanitizeProps({
@@ -75,9 +82,10 @@ walk("src");
 const used = new Set<string>();
 for (const f of files) {
   const src = readFileSync(f, "utf8");
-  for (const m of src.matchAll(/(?:track|useTrackOnce)\(\s*"[a-z_]+"\s*,\s*\{([^}]*)\}/g)) {
+  for (const m of src.matchAll(/(?:track|useTrackOnce)\(\s*"([a-z_]+)"\s*,\s*\{([^}]*)\}/g)) {
+    if (SUPABASE_ONLY_EVENTS.has(m[1])) continue; // never sent to PostHog
     // keys at the start or after a comma: `key: value` and shorthand `{ card, method }`
-    for (const k of m[1].matchAll(/(?:^|,)\s*([a-z_]+)\s*(?=[:,]|\s*$)/g)) used.add(k[1]);
+    for (const k of m[2].matchAll(/(?:^|,)\s*([a-z_]+)\s*(?=[:,]|\s*$)/g)) used.add(k[1]);
   }
 }
 const missing = [...used].filter((k) => !ALLOWED_PROPS.has(k));

@@ -10,8 +10,9 @@ import { isQaSession } from "@/lib/events/track";
 
 export type DeleteResult = "deleted" | "nothing" | "failed";
 
-/** QA marker and analytics choice are settings, not personal data — kept so a QA browser stays excluded from analytics. */
-const KEEP = new Set(["gearmatch.qa", "gearmatch.analytics"]);
+/** The QA marker is a setting, not personal data — kept so a QA browser stays excluded from analytics. The PostHog consent
+ * is forgotten: its Supabase record is deleted with the account, so the next account must agree again. */
+const KEEP = new Set(["gearmatch.qa"]);
 
 /** Storage keys of this app's data to forget after a deletion. */
 export function keysToForget(keys: string[]): string[] {

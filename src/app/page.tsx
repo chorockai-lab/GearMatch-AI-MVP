@@ -4,6 +4,7 @@ import Link from "next/link";
 import { HERO_TOP, LandingScene } from "@/components/onboarding/LandingScene";
 import { LandingGate } from "@/components/onboarding/LandingGate";
 import { FlowFrame, PrimaryLink } from "@/components/onboarding/Flow";
+import { LandingConsent } from "@/components/onboarding/LandingConsent";
 
 export default function Landing() {
   return (
@@ -47,6 +48,7 @@ function LandingScreen() {
             숨은 러닝 동물 발견하기
           </PrimaryLink>
         </div>
+        <LandingConsent />
         <Link href="/privacy" className="mx-auto mt-2 flex h-11 items-center px-2 text-[13px] text-gm-g2 underline underline-offset-4">
           개인정보 수집·이용 안내
         </Link>
