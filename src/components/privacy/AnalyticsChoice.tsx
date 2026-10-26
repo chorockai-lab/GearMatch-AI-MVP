@@ -25,7 +25,9 @@ export function AnalyticsChoice() {
       <h2 className="m-0 text-[20px] font-extrabold">이용 통계 분석</h2>
       <p className="mt-2 mb-0 text-[15px] leading-6 text-gm-g1 break-keep">
         서비스 개선을 위해 화면 이용 기록을 미국의 PostHog로 보내 통계를 냅니다(8번). 테스트 답변·키·체중은 보내지 않아요.
-        {POSTHOG_MODE === "consent" ? " 두 항목에 모두 동의한 경우에만 보내요." : ""} 동의하지 않거나 철회해도 서비스는 그대로 이용할 수 있어요.
+        {POSTHOG_MODE === "consent"
+          ? " 두 항목에 모두 동의한 경우에만 보내요. 동의하지 않거나 철회해도 서비스는 그대로 이용할 수 있어요."
+          : " ‘보내지 않기’를 골라도 서비스는 그대로 이용할 수 있어요."}
       </p>
       {state && (
         <>
@@ -61,7 +63,8 @@ export function AnalyticsChoice() {
           )}
           <p className="mt-4 mb-0 text-[15px] font-bold">{sending ? "지금: 보내는 중" : "지금: 보내지 않음"}</p>
           <p className="mt-2 mb-0 text-[13px] leading-5 text-gm-g2 break-keep">
-            이 선택은 지금 이 브라우저(앱)에만 적용돼요. 철회하면 이미 보낸 기록의 삭제도 요청해요.
+            이 선택은 지금 이 브라우저(앱)에만 적용돼요. {POSTHOG_MODE === "consent" ? "철회하면" : "‘보내지 않기’를 고르면"} 이미 보낸 기록의 삭제도
+            요청해요.
           </p>
         </>
       )}

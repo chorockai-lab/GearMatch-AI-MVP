@@ -18,6 +18,11 @@ const POSTHOG_REFUSE =
   POSTHOG_MODE === "consent"
     ? "아래 ‘이용 통계 분석’에서 두 항목(이용 통계 분석·국외 이전)에 모두 동의한 경우에만 보냅니다"
     : "아래 ‘이용 통계 분석’에서 ‘보내지 않기’를 고르면 보내지 않습니다";
+/** all = opt-out: no separate consent; the wording below changes only in that mode (consent-mode text stays as approved). */
+const OPT_OUT = POSTHOG_MODE === "all";
+const POSTHOG_SENT = OPT_OUT // = POSTHOG_EVENTS in lib/analytics/posthog-policy.ts
+  ? "익명 ID, 주요 이용 기록(방문, 테스트 진행·결과 유형, 온보딩 완료, RUNNING·통계 화면 보기, 러닝 기록 저장, ITEMS·신발 상세 보기·저장, 카드 이미지 만들기·저장), 화면 경로, 브라우저·기기 종류"
+  : "익명 ID, 이용 기록(허용된 항목만), 화면 경로, 브라우저·기기 종류";
 
 
 function Section({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
@@ -83,7 +88,9 @@ export function PrivacyNotice() {
             items={[
               "카드 이미지(이미지 저장)는 이용자의 기기에서 만들어지며 서버로 보내지 않습니다.",
               ...(POSTHOG_USERS
-                ? ["이용 통계 분석 동의·철회 기록(선택 내용, 안내 버전, 시각, 선택한 화면)을 저장합니다. 이 기록은 고칠 수 없고, 내 데이터를 삭제하면 함께 삭제됩니다."]
+                ? [
+                    `이용 통계 분석 ${OPT_OUT ? "선택(보내지 않기·다시 보내기)" : "동의·철회"} 기록(선택 내용, 안내 버전, 시각, 선택한 화면)을 저장합니다. 이 기록은 고칠 수 없고, 내 데이터를 삭제하면 함께 삭제됩니다.`,
+                  ]
                 : []),
               "브라우저 저장 공간에는 익명 로그인 상태와 서비스 설정이 저장됩니다.",
             ]}
@@ -107,7 +114,9 @@ export function PrivacyNotice() {
               "익명 ID, 러닝 테스트 답변·결과, 러닝 습관, 신발, 러닝 기록: 서비스 제공(이용 계약 이행)에 필요한 범위에서 처리합니다.",
               "이용 기록·접속 정보: 서비스 제공과 보안, 서비스 개선을 위한 통계 집계에 처리합니다.",
               "신체 정보(키·체중·발 사이즈): 선택 항목입니다. 입력한 경우에만 비슷한 조건의 러닝화 정보를 보여 주는 데 쓰며, 입력하지 않아도 서비스를 이용할 수 있습니다.",
-              "PostHog 이용 통계 분석: 이용자가 별도로 동의한 경우에만 처리합니다.",
+              OPT_OUT
+                ? "PostHog 이용 통계 분석: 위 이용 기록과 같은 목적(서비스 개선 통계)으로 PostHog에 처리를 맡깁니다(7번 처리 위탁). ‘이용 통계 분석’에서 ‘보내지 않기’를 고르면 보내지 않습니다."
+                : "PostHog 이용 통계 분석: 이용자가 별도로 동의한 경우에만 처리합니다.",
             ]}
           />
         </div>
@@ -148,7 +157,7 @@ export function PrivacyNotice() {
             ...(POSTHOG_USERS
               ? [
                   <>
-                    PostHog로 보낸 이용 기록은 GearMatch 서버 기록과 삭제 시점이 다릅니다. ‘내 데이터 삭제하기’를 누르거나 동의를 철회하면 삭제 요청을
+                    PostHog로 보낸 이용 기록은 GearMatch 서버 기록과 삭제 시점이 다릅니다. ‘내 데이터 삭제하기’를 누르거나 {OPT_OUT ? "‘보내지 않기’를 고르면" : "동의를 철회하면"} 삭제 요청을
                     함께 보내고, 운영자가 수시로 PostHog에서 삭제합니다. 광고 차단 등으로 요청이 전달되지 않은 경우를 찾기 위해 주 1회 점검합니다.
                   </>,
                 ]
@@ -175,7 +184,7 @@ export function PrivacyNotice() {
             <dt className="text-[15px] font-bold text-gm-tx">PostHog Inc.</dt>
             <dd className="m-0 mt-1">
               {POSTHOG_USERS
-                ? `이용 통계 분석 — 익명 ID, 이용 기록(허용된 항목만), 화면 경로, 브라우저·기기 종류. ${POSTHOG_REFUSE}.`
+                ? `이용 통계 분석 — ${POSTHOG_SENT}. ${POSTHOG_REFUSE}.`
                 : "이용 통계 분석 — 현재 이용자의 정보는 보내지 않습니다(내부 점검용으로만 사용)."}
             </dd>
           </div>
@@ -194,15 +203,18 @@ export function PrivacyNotice() {
             <div className="border-b border-gm-line py-3">
               <dt className="text-[15px] font-bold text-gm-tx">PostHog Inc. (미국 · privacy@posthog.com)</dt>
               <dd className="m-0 mt-1">
-                항목: 익명 ID, 이용 기록(허용된 항목만 — 테스트 답변·키·체중 제외), 화면 경로, 브라우저·기기 종류, 접속 IP(전송 과정에서 받지만
-                PostHog에 저장하지 않도록 설정, 위치 정보 추출도 하지 않음)
+                {OPT_OUT
+                  ? `항목: ${POSTHOG_SENT} — 테스트 답변·신체 정보·직접 입력한 글은 보내지 않음, `
+                  : "항목: 익명 ID, 이용 기록(허용된 항목만 — 테스트 답변·키·체중 제외), 화면 경로, 브라우저·기기 종류, "}
+                접속 IP(전송 과정에서 받지만 PostHog에 저장하지 않도록 설정, 위치 정보 추출도 하지 않음)
               </dd>
               <dd className="m-0 mt-1">국가·시기·방법: 미국(PostHog US Cloud) — 서비스를 이용하는 동안 네트워크로 전송</dd>
               <dd className="m-0 mt-1">
-                목적·보유 기간: 이용 통계 · 동의를 철회하거나 데이터를 삭제하면 운영자가 삭제하며, 늦어도 2027년 2월 4일에 모두 삭제합니다
+                목적·보유 기간: 이용 통계 · {OPT_OUT ? "‘보내지 않기’를 고르거나" : "동의를 철회하거나"} 데이터를 삭제하면 운영자가 삭제하며, 늦어도 2027년
+                2월 4일에 모두 삭제합니다
               </dd>
               <dd className="m-0 mt-1">
-                거부 방법·효과: {POSTHOG_REFUSE}. 동의하지 않거나 철회해도 서비스 이용에는 영향이 없습니다.
+                거부 방법·효과: {POSTHOG_REFUSE}. {OPT_OUT ? "‘보내지 않기’를 골라도" : "동의하지 않거나 철회해도"} 서비스 이용에는 영향이 없습니다.
               </dd>
               <dd className="m-0 mt-1 text-[14px] text-gm-g2">안내 버전 {CONSENT_VERSION}</dd>
             </div>
@@ -223,10 +235,10 @@ export function PrivacyNotice() {
         <div className="mt-2">
           <Bullets
             items={[
-              ...(POSTHOG_USERS
+              ...(POSTHOG_USERS && !OPT_OUT
                 ? ["PostHog Inc.(미국): 이용자의 별도 동의를 받은 경우에만 이전합니다(개인정보 보호법 제28조의8 제1항 제1호). 동의는 언제든 철회할 수 있습니다."]
                 : []),
-              "Supabase Inc.·Vercel Inc.(미국): 서비스 제공(이용 계약 이행)에 필요한 처리위탁·보관으로서, 이 안내에 이전 항목·국가·시기와 방법·받는 자·목적과 보유 기간·거부 방법을 공개하고 이전합니다(개인정보 보호법 제28조의8 제1항 제3호 가목).",
+              `Supabase Inc.·Vercel Inc.${OPT_OUT ? "·PostHog Inc." : ""}(미국): 서비스 제공(이용 계약 이행)에 필요한 처리위탁·보관으로서, 이 안내에 이전 항목·국가·시기와 방법·받는 자·목적과 보유 기간·거부 방법을 공개하고 이전합니다(개인정보 보호법 제28조의8 제1항 제3호 가목).${OPT_OUT ? " PostHog로의 이전은 ‘보내지 않기’로 거부할 수 있습니다." : ""}`,
             ]}
           />
         </div>
@@ -270,6 +282,8 @@ export function PrivacyNotice() {
 
       <Section n={14} title="시행일">
         2026년 10월 19일. 이 안내를 게시하기 전부터 서비스를 이용한 테스터에게는 이 안내를 직접 전달합니다.
+        {OPT_OUT &&
+          " 변경: PostHog 이용 통계 분석을 동의한 경우에만 보내던 방식에서 ‘보내지 않기’로 거부할 수 있는 방식으로 바꿨습니다. 이전에 동의하지 않거나 철회한 경우는 계속 보내지 않습니다."}
       </Section>
     </div>
   );

@@ -188,17 +188,14 @@ PostHog 보관 기간(공식: 무료 1년)은 우리 보관 기한보다 길고 
 - QA(`?qa=1`): 이벤트와 Person 모두 `qa: true` → KPI(`qa is not set`)에서 제외. 배포 직후 Vercel 자동 접속 등 HeadlessChrome은 posthog-js가 보내지 않음
 - 실제 Production 활성화는 아래 법적 판단 승인 + 안내문 변경 PR 병합 뒤에만
 
-**승인 후 바꿀 안내문 (현재 `all` 빌드에 그대로 남는 `동의` 전제 문구)**
-| 위치 | 현재(동의 전제) | 바꿀 방향 |
-|---|---|---|
-| 개인정보 안내 1번 | 이용 통계 분석 동의·철회 기록 | 이용 통계 분석 선택(보내지 않기·다시 보내기) 기록 |
-| 2번 항목별 처리 근거 | PostHog: 별도로 동의한 경우에만 처리 | 승인된 처리 근거 문구 |
-| 8번 PostHog 목적·보유 기간 | 동의를 철회하거나 … 삭제 | 보내지 않기를 고르거나 … 삭제 |
-| 8번 국외 이전의 근거 | PostHog: 제28조의8 제1항 제1호(동의) | 승인된 이전 근거 문구 |
-| 8번 거부 방법·효과 | 동의하지 않거나 철회해도 | 보내지 않기를 골라도 |
-| `/privacy` 이용 통계 분석 설명 | 동의하지 않거나 철회해도 | 보내지 않기를 골라도 |
-| 안내 버전 `CONSENT_VERSION` | 2026-10-21 | 변경일로 올림(거부 이력은 유지됨) |
-- `consent` 모드 문구는 그대로 두고 모드별로 나눠서 바꿈 → 안내문 PR을 먼저 병합·배포해도 Production(`consent`) 화면은 바뀌지 않고, 환경변수 전환 순간 `all` 문구가 함께 적용됨
+**`all` 안내문 — 구현(2026-10-26), `all` 빌드에서만 표시** (`consent` 빌드 문구는 Production과 동일 확인)
+- 1번 선택 기록(보내지 않기·다시 보내기) · 2번 PostHog 근거: 같은 목적(서비스 개선 통계)의 처리 위탁(7번) · 5번·8번 거부 = ‘보내지 않기’ · 8번 이전 근거: Supabase·Vercel과 같은 제28조의8 제1항 제3호 가목 · 8번 항목 = 아래 최소 이벤트 · 14번 변경 문구
+- 위 2번·8번 근거는 운영 책임자가 확인한 뒤에만 `all`로 전환
+
+**PostHog 최소 이벤트 (2026-10-26, `POSTHOG_EVENTS`)** — 나머지는 Supabase에만 저장
+- 보냄: `app_open` `landing_view` `test_start` `test_question_view`(q) `test_complete`(animal) `reveal_view`(animal) `profile_habits_complete` `onboarding_complete` `running_view` `run_save_success` `stats_view` `items_view` `shoe_detail_view`(product_id) `shoe_save`(product_id) `card_image_create`(card) `card_share_result`(card·method·result) + `qa`
+- 안 보냄: 러닝 습관·신체 정보 값과 입력 여부, 신체 정보 입력/건너뜀, 기록 수정·삭제·실패, 기록 목록·통계 상세, 신발 저장 해제, 동의 기록
+- QA Monitor "QA 이벤트" 표는 이제 위 이벤트만 Supabase와 비교
 
 **전환 절차 (승인 후, 각 단계 별도 승인)**
 1. 안내문 변경 PR(승인된 문구) → CI → 병합 승인 → Production 배포(아직 `consent`라 화면 변화 없음)

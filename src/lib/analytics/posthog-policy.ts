@@ -51,6 +51,37 @@ export const PENDING_EVENTS_KEY = "gearmatch.events_pending";
 /** Events kept in Supabase only — never sent to PostHog (the consent record itself). */
 export const SUPABASE_ONLY_EVENTS = new Set(["analytics_consent"]);
 
+/**
+ * The only events PostHog receives, each with the only props it keeps (2026-10-26: minimum for product-behaviour KPIs —
+ * visit, test funnel and drop-off by question, result type, onboarding, first/repeat run, ITEMS, card image, revisit).
+ * Every other event (profile details, run edits, history, consent records…) stays in Supabase only. `qa` is always kept.
+ */
+export const POSTHOG_EVENTS: Readonly<Record<string, readonly string[]>> = {
+  app_open: [],
+  landing_view: [],
+  test_start: [],
+  test_question_view: ["q"],
+  test_complete: ["animal"],
+  reveal_view: ["animal"],
+  profile_habits_complete: [],
+  onboarding_complete: [],
+  running_view: [],
+  run_save_success: [],
+  stats_view: [],
+  items_view: [],
+  shoe_detail_view: ["product_id"],
+  shoe_save: ["product_id"],
+  card_image_create: ["card"],
+  card_share_result: ["card", "method", "result"],
+};
+
+/** What goes to PostHog for one event: null = not sent at all; otherwise only that event's allowed props (+ qa). */
+export function posthogProps(name: string, props: Record<string, unknown>): Record<string, string | number | boolean | null> | null {
+  const keep = POSTHOG_EVENTS[name];
+  if (!keep || SUPABASE_ONLY_EVENTS.has(name)) return null;
+  return sanitizeProps(Object.fromEntries(Object.entries(props).filter(([k]) => k === "qa" || keep.includes(k))));
+}
+
 export function resolveMode(token: string | undefined, host: string | undefined, flag: string | undefined): PostHogMode {
   // A PostHog project API key always starts with "phc_". Anything else (a project id, a personal key "phx_", a typo)
   // would be accepted by the ingestion endpoint with HTTP 200 but land in no project — so stay off instead.
