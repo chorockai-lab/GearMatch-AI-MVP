@@ -10,23 +10,27 @@ import {
   effectiveChoice,
   mayHaveSent,
   NO_CONSENT,
+  noticeVersion,
+  posthogProps,
   resolveMode,
-  sanitizeProps,
   scrubEventProperties,
   shouldSend,
   PENDING_EVENTS_KEY,
-  SUPABASE_ONLY_EVENTS,
   type AnalyticsChoice,
   type ConsentState,
   type ConsentValue,
   type PostHogMode,
 } from "./posthog-policy";
 
+const ALL_SINCE = process.env.NEXT_PUBLIC_POSTHOG_ALL_SINCE; // KST date `all` took effect (YYYY-MM-DD)
 export const POSTHOG_MODE: PostHogMode = resolveMode(
   process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
   process.env.NEXT_PUBLIC_POSTHOG_HOST,
   process.env.NEXT_PUBLIC_POSTHOG_ENABLED,
+  ALL_SINCE,
 );
+/** The PostHog notice in force (shown on /privacy, stored with each choice): CONSENT_VERSION, or the `all` start date. */
+export const NOTICE_VERSION = noticeVersion(POSTHOG_MODE, ALL_SINCE);
 
 const CONSENT_KEY = "gearmatch.analytics"; // JSON ConsentState — the two optional consents (landing · /privacy)
 const SENT_KEY = "gearmatch.analytics_sent"; // "1" once this browser captured to PostHog — cleared by deletion / withdrawal
@@ -46,7 +50,7 @@ export function consentState(): ConsentState {
 
 /** The effective choice for sending (both consents under the current notice version). */
 export function analyticsChoice(): AnalyticsChoice {
-  return effectiveChoice(consentState());
+  return effectiveChoice(consentState(), NOTICE_VERSION);
 }
 
 /** A consent record still waiting for Supabase — PostHog waits too, so no PostHog data exists without a stored consent. */
@@ -114,9 +118,10 @@ function load(): Promise<PostHog | null> {
   return loaded;
 }
 
-/** Sends one product event (already deduplicated by the caller) to PostHog when allowed. Never throws. */
+/** Sends one product event (already deduplicated by the caller) to PostHog when allowed — POSTHOG_EVENTS only. Never throws. */
 export function capturePostHog(name: string, props: Record<string, unknown>, userId: string, isQa: boolean): void {
-  if (typeof window === "undefined" || SUPABASE_ONLY_EVENTS.has(name) || !shouldSend(POSTHOG_MODE, isQa, analyticsChoice())) return;
+  const sendProps = posthogProps(name, { ...props, ...(isQa ? { qa: true } : {}) }); // minimum events and props only
+  if (typeof window === "undefined" || !sendProps || !shouldSend(POSTHOG_MODE, isQa, analyticsChoice())) return;
   if (!isQa && POSTHOG_MODE === "consent" && consentUnconfirmed()) return;
   void load()
     .then((ph) => {
@@ -133,7 +138,7 @@ export function capturePostHog(name: string, props: Record<string, unknown>, use
       } catch {
         /* storage blocked */
       }
-      ph.capture(name, sanitizeProps({ ...props, ...(isQa ? { qa: true } : {}) }));
+      ph.capture(name, sendProps);
     })
     .catch(() => {
       /* analytics must never affect the user flow */

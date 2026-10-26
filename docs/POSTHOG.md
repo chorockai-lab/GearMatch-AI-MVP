@@ -25,7 +25,7 @@ Supabase `events`(원본 기록)는 그대로 두고, **같은 제품 이벤트�
 
 - `qa`: 내부 QA 세션(`?qa=1`로 연 브라우저)만 PostHog로 보냄. **현재 Production 값**. 일반 사용자 이벤트가 PostHog에 없는 것이 정상
 - `consent`(동의 방식, **채택 2026-10-21**): QA 세션 + **두 선택 동의(이용 통계 분석 · 미국 국외 이전)를 모두 한** 브라우저만. 동의는 `/privacy` **이용 통계 분석**에서만(2026-10-26부터 랜딩 체크 2개 제거 — 랜딩은 "서비스 개선을 위해 이용 기록을 분석합니다." 안내와 개인정보 안내 링크만. 링크를 열거나 테스트를 시작하는 것은 동의가 아님). 선택 전·한 항목만·철회 후에는 아무것도 보내지 않음(SDK도 불러오지 않음). 동의 이전 이벤트는 소급 전송하지 않음 — 전체 퍼널은 Supabase 기준
-- `all`(거부 방식): 모든 사용자, `/privacy`에서 `보내지 않기`를 고른 브라우저는 제외
+- `all`(거부 방식): 모든 사용자, `/privacy`에서 `보내지 않기`를 고른 브라우저는 제외. `NEXT_PUBLIC_POSTHOG_ALL_SINCE`(전환일 KST, YYYY-MM-DD) 필수 — 안내 버전·변경일로 표시, 없거나 형식이 틀리면 `consent`로 동작
 - 랜딩 안내 문구는 모든 모드에서 표시(Supabase 이용 기록 분석은 항상 하므로 사실). `/privacy` 선택 영역·PostHog 국외 이전 항목·삭제 화면의 PostHog 안내는 `consent`·`all`에서만 나타남(배포 모드에 맞춰 자동). Production: `consent`(2026-10-26 확인)
 - 선택은 브라우저 localStorage `gearmatch.analytics`(`{stats, transfer, version}`)에 두고, 안내 버전(`CONSENT_VERSION`, `posthog-policy.ts`)이 바뀌면 이전 동의는 무효 → 다시 동의해야 전송
 - `consent`·`all`은 아래 **일반 사용자 전환** 선결 조건을 모두 마친 뒤에만 사용
@@ -188,21 +188,18 @@ PostHog 보관 기간(공식: 무료 1년)은 우리 보관 기한보다 길고 
 - QA(`?qa=1`): 이벤트와 Person 모두 `qa: true` → KPI(`qa is not set`)에서 제외. 배포 직후 Vercel 자동 접속 등 HeadlessChrome은 posthog-js가 보내지 않음
 - 실제 Production 활성화는 아래 법적 판단 승인 + 안내문 변경 PR 병합 뒤에만
 
-**승인 후 바꿀 안내문 (현재 `all` 빌드에 그대로 남는 `동의` 전제 문구)**
-| 위치 | 현재(동의 전제) | 바꿀 방향 |
-|---|---|---|
-| 개인정보 안내 1번 | 이용 통계 분석 동의·철회 기록 | 이용 통계 분석 선택(보내지 않기·다시 보내기) 기록 |
-| 2번 항목별 처리 근거 | PostHog: 별도로 동의한 경우에만 처리 | 승인된 처리 근거 문구 |
-| 8번 PostHog 목적·보유 기간 | 동의를 철회하거나 … 삭제 | 보내지 않기를 고르거나 … 삭제 |
-| 8번 국외 이전의 근거 | PostHog: 제28조의8 제1항 제1호(동의) | 승인된 이전 근거 문구 |
-| 8번 거부 방법·효과 | 동의하지 않거나 철회해도 | 보내지 않기를 골라도 |
-| `/privacy` 이용 통계 분석 설명 | 동의하지 않거나 철회해도 | 보내지 않기를 골라도 |
-| 안내 버전 `CONSENT_VERSION` | 2026-10-21 | 변경일로 올림(거부 이력은 유지됨) |
-- `consent` 모드 문구는 그대로 두고 모드별로 나눠서 바꿈 → 안내문 PR을 먼저 병합·배포해도 Production(`consent`) 화면은 바뀌지 않고, 환경변수 전환 순간 `all` 문구가 함께 적용됨
+**`all` 안내문 — 구현(2026-10-26), `all` 빌드에서만 표시** (`consent` 빌드 문구는 Production과 동일 확인)
+- 1번 선택 기록(보내지 않기·다시 보내기) · 2번 PostHog 근거: 같은 목적(서비스 개선 통계)의 처리 위탁(7번) · 5번·8번 거부 = ‘보내지 않기’ · 8번 이전 근거: Supabase·Vercel과 같은 제28조의8 제1항 제3호 가목 · 8번 항목 = 아래 최소 이벤트 · 14번 변경 문구
+- 위 2번·8번 근거는 운영 책임자가 확인한 뒤에만 `all`로 전환
+
+**PostHog 최소 이벤트 (2026-10-26, `POSTHOG_EVENTS`)** — 나머지는 Supabase에만 저장
+- 보냄: `app_open` `landing_view` `test_start` `test_question_view`(q) `test_complete`(animal) `reveal_view`(animal) `profile_habits_complete` `onboarding_complete` `running_view` `run_save_success` `stats_view` `items_view` `shoe_detail_view`(product_id) `shoe_save`(product_id) `card_image_create`(card) `card_share_result`(card·method·result) + `qa`
+- 안 보냄: 러닝 습관·신체 정보 값과 입력 여부, 신체 정보 입력/건너뜀, 기록 수정·삭제·실패, 기록 목록·통계 상세, 신발 저장 해제, 동의 기록
+- QA Monitor "QA 이벤트" 표는 이제 위 이벤트만 Supabase와 비교
 
 **전환 절차 (승인 후, 각 단계 별도 승인)**
 1. 안내문 변경 PR(승인된 문구) → CI → 병합 승인 → Production 배포(아직 `consent`라 화면 변화 없음)
-2. Vercel → Settings → Environment Variables → Production `NEXT_PUBLIC_POSTHOG_ENABLED` = `all` → Deployments → 최신 Production **Redeploy**(빌드 시 고정되는 값이라 재배포 필수). Redeploy 완료 시각(KST)을 **전환 시점**으로 기록
+2. Vercel → Settings → Environment Variables → Production `NEXT_PUBLIC_POSTHOG_ENABLED` = `all` + `NEXT_PUBLIC_POSTHOG_ALL_SINCE` = 전환일(KST, 예: `2026-10-27`) → Deployments → 최신 Production **Redeploy**(빌드 시 고정되는 값이라 재배포 필수). Redeploy 완료 시각(KST)을 **전환 시점**으로 기록
 3. 실제 수신 확인: 휴대폰 일반 브라우저(`?qa=1` 없이) → 랜딩·테스트 → PostHog Activity에 `qa` 없는 이벤트 → KPI 대시보드 반영 → `/privacy` `보내지 않기` 후 새 이벤트 없음 → 같은 브라우저 '내 데이터 삭제' 후 PostHog Person 삭제(위 삭제 절차). QA 브라우저(`?qa=1`) 이벤트는 KPI에 안 보이고 QA Monitor에만 보임
 4. 다음 날 교차 확인: 전환 시점 이후 같은 기간 Supabase(QA 제외)와 PostHog KPI의 이벤트별 사용자 수 비교 — PostHog ≤ Supabase(차이 = 보내지 않기·광고 차단·봇). PostHog가 더 많으면 오류
 5. 분석 기준: 전환 시점 이전 = Supabase(`docs/ANALYTICS_QUERIES.md`), 이후 = PostHog KPI(Supabase는 원본으로 계속 저장·교차 확인용). 과거 데이터는 PostHog로 옮기지 않음

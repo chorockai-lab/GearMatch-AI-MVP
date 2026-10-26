@@ -1,7 +1,7 @@
 // PostHog policy (src/lib/analytics/posthog-policy.ts). Run: npm run test:analytics
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { ALLOWED_PROPS, carryOverConsent, CONSENT_VERSION, effectiveChoice, mayHaveSent, resolveMode, sanitizeProps, scrubEventProperties, shouldSend, stripUrl, SUPABASE_ONLY_EVENTS } from "../src/lib/analytics/posthog-policy";
+import { ALLOWED_PROPS, carryOverConsent, CONSENT_VERSION, effectiveChoice, mayHaveSent, noticeVersion, POSTHOG_EVENTS, posthogProps, resolveMode, sanitizeProps, scrubEventProperties, shouldSend, stripUrl, SUPABASE_ONLY_EVENTS } from "../src/lib/analytics/posthog-policy";
 
 let failures = 0;
 const check = (ok: boolean, msg: string) => {
@@ -15,7 +15,10 @@ check(resolveMode(undefined, H, "all") === "off", "no token → off");
 check(resolveMode("phc_x", undefined, "all") === "off", "no host → off");
 check(resolveMode("phc_x", "http://insecure", "all") === "off", "non-https host → off");
 check(resolveMode("phc_x", H, undefined) === "off" && resolveMode("phc_x", H, "yes") === "off", "flag missing / unknown → off");
-check(resolveMode("phc_x", H, "qa") === "qa" && resolveMode("phc_x", H, "all") === "all" && resolveMode("phc_x", H, "consent") === "consent", "qa / consent / all");
+check(resolveMode("phc_x", H, "qa") === "qa" && resolveMode("phc_x", H, "all", "2026-10-27") === "all" && resolveMode("phc_x", H, "consent") === "consent", "qa / consent / all");
+check(resolveMode("phc_x", H, "all") === "consent" && resolveMode("phc_x", H, "all", "2026-13-40") === "consent" && resolveMode("phc_x", H, "all", "27.10.2026") === "consent", "all without a valid start date → runs as consent");
+check(noticeVersion("all", "2026-10-27") === "2026-10-27" && noticeVersion("consent", "2026-10-27") === CONSENT_VERSION, "notice version: all start date in all mode, consent version otherwise");
+check(effectiveChoice(carryOverConsent({ stats: "granted", transfer: "denied", version: CONSENT_VERSION }, "2026-10-27"), "2026-10-27") === "denied", "switching to all: a refusal under the consent notice is kept");
 check(resolveMode("ABCDefgh1234567890abcdefghijklmno", H, "qa") === "off", "token without phc_ (e.g. a project id) → off");
 check(resolveMode("phx_personalkey123", H, "qa") === "off", "personal API key (phx_) → off");
 check(resolveMode("phc_abc 123", H, "qa") === "off" && resolveMode('"phc_abc"', H, "qa") === "off", "token with spaces / quotes → off");
@@ -70,6 +73,14 @@ check(!("weight" in s) && !("foot" in s), "body values never sent (only entered 
 check(!("shoe_label" in s) && !("answer_text" in s) && !("path" in s), "unknown keys (shoe name, answer text, path) dropped");
 check(!("from" in s), "free text with spaces dropped");
 check(s.product_id === "GM-NK-PEGASUS-42" && s.interest_distance === "10K", "catalogue id and codes kept");
+
+// ── minimum events for PostHog ──────────────────────────────────────────────
+check(posthogProps("profile_runner_complete", { height: true }) === null && posthogProps("run_update", { run_id: "x" }) === null && posthogProps("analytics_consent", { stats: "granted" }) === null, "PostHog: events outside the minimum set are not sent (profile details, run edits, consent record)");
+check(JSON.stringify(posthogProps("profile_habits_complete", { experience: "1y", runs_per_week: 3, qa: true })) === JSON.stringify({ qa: true }), "PostHog: habit answers stay in Supabase; only the step and qa are sent");
+check(JSON.stringify(posthogProps("test_question_view", { q: 2 })) === JSON.stringify({ q: 2 }) && JSON.stringify(posthogProps("shoe_save", { product_id: "GM-NK-PEGASUS-42", from: "detail" })) === JSON.stringify({ product_id: "GM-NK-PEGASUS-42" }), "PostHog: only the props each event needs (q, product_id)");
+check(Object.values(POSTHOG_EVENTS).flat().every((k) => ALLOWED_PROPS.has(k)), "PostHog: every kept prop passes the value allowlist");
+for (const ev of ["app_open", "test_start", "test_question_view", "test_complete", "reveal_view", "profile_habits_complete", "onboarding_complete", "running_view", "run_save_success", "items_view", "shoe_detail_view", "shoe_save"])
+  check(ev in POSTHOG_EVENTS, `PostHog: dashboard event ${ev} is sent`);
 
 // ── URL scrubbing (before_send) ─────────────────────────────────────────────
 check(stripUrl("https://gear-match-ai-mvp.vercel.app/items?range=wide&qa=1#x") === "https://gear-match-ai-mvp.vercel.app/items", "query and fragment removed");
