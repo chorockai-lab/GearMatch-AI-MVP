@@ -164,6 +164,8 @@ PostHog 보관 기간(공식: 무료 1년)은 우리 보관 기한보다 길고 
 ### 자동화 테스트
 - `npm run test:analytics` — 모드별 전송 조건, 두 동의·안내 버전, 삭제 요청 조건(단위)
 - `npm run e2e:consent` — 로컬 `consent` 빌드에서 동의 전 / 한 항목만 / 두 항목 / 철회 / 삭제 / 동의 기록 저장 실패→재시도 시나리오. PostHog 요청은 가로채 실제 전송 없음, Supabase 테스트 계정은 `qa` 표시 후 앱으로 삭제. 실행법은 파일 맨 위 주석
+- `npm run e2e:all` — 로컬 `all` 빌드에서 선택 없음(기본 전송) / 보내지 않기→다시 보내기 / 기존 거부 이력 / QA 표시 / 삭제 시나리오. 안전장치는 위와 같음(공용 하네스 `scripts/e2e-harness.mjs`)
+- 로컬 빌드는 반드시 `NEXT_PUBLIC_DATA_MODE=real`로(`.env.local`은 `demo`라 그대로 빌드하면 Supabase에 기록되지 않아 E2E가 실패). 로컬도 같은 Supabase에 기록하므로 직접 여는 브라우저는 `?qa=1` 먼저
 
 ## 체크박스 없는 운영(`all`) 검토 — 2026-10-26, 미승인
 
@@ -179,10 +181,32 @@ PostHog 보관 기간(공식: 무료 1년)은 우리 보관 기한보다 길고 
 2. 국외 이전 근거: 동의 외 경로는 계약 이행에 필요한 처리위탁·보관 + 처리방침 공개(제28조의8 제1항 제3호)뿐으로 보임. 이용 통계가 "계약 이행에 필요"한지가 쟁점. 인증(제4호)·적정성(제5호)은 PostHog(미국)에 해당 근거 확인 안 됨
 - 둘 중 하나라도 "동의 필요"면 `all` 불가 → `consent` 유지(동의는 `/privacy`에서만) 또는 `off`
 
-**`all`로 바꾸게 되는 경우(승인 후) 코드 동작 — 이미 구현**
-- 거부: `/privacy` 이용 통계 분석에서 `보내지 않기` → 즉시 중단 + 이미 보낸 기록 삭제 요청
-- 기존 이력 보존: 과거에 철회(거부)한 브라우저는 `denied` 상태라 `all`에서도 보내지 않음. 선택 기록이 없는 브라우저만 기본 전송
-- 안내문은 모드에 맞춰 자동 전환("‘보내지 않기’를 고르면 보내지 않습니다"). 이 경우 안내 문구 2번 근거·8번 국외 이전 근거를 승인된 근거로 바꿔야 함
+**`all`로 바꾸게 되는 경우(승인 후) 코드 동작 — 구현·로컬 검증(2026-10-26, `npm run e2e:all` 22/22)**
+- 기본 전송: 선택 기록이 없는 일반 브라우저는 첫 화면부터 PostHog로 보냄(`qa` 없음 → KPI 대시보드에 집계). 동의 기록 이벤트는 PostHog로 보내지 않음
+- 거부: `/privacy` 이용 통계 분석에서 `보내지 않기` → 즉시 중단 + 이미 보낸 기록 삭제 요청(`gm_deletion_reason: withdrawn`) + Supabase에 거부 기록. `다시 보내기`로 재개
+- 기존 이력 보존: 과거(`consent` 모드)에 한 항목이라도 철회·거부한 브라우저는 안내 버전과 관계없이 `all`에서도 보내지 않음. 2026-10-26 수정: 안내 버전이 바뀌면 `/privacy` 상태 표시가 거부를 잊고 "보내는 중"으로 보이던 문제(실제 전송은 없었음) — 거부는 버전이 바뀌어도 유지(`carryOverConsent`)
+- QA(`?qa=1`): 이벤트와 Person 모두 `qa: true` → KPI(`qa is not set`)에서 제외. 배포 직후 Vercel 자동 접속 등 HeadlessChrome은 posthog-js가 보내지 않음
+- 실제 Production 활성화는 아래 법적 판단 승인 + 안내문 변경 PR 병합 뒤에만
+
+**승인 후 바꿀 안내문 (현재 `all` 빌드에 그대로 남는 `동의` 전제 문구)**
+| 위치 | 현재(동의 전제) | 바꿀 방향 |
+|---|---|---|
+| 개인정보 안내 1번 | 이용 통계 분석 동의·철회 기록 | 이용 통계 분석 선택(보내지 않기·다시 보내기) 기록 |
+| 2번 항목별 처리 근거 | PostHog: 별도로 동의한 경우에만 처리 | 승인된 처리 근거 문구 |
+| 8번 PostHog 목적·보유 기간 | 동의를 철회하거나 … 삭제 | 보내지 않기를 고르거나 … 삭제 |
+| 8번 국외 이전의 근거 | PostHog: 제28조의8 제1항 제1호(동의) | 승인된 이전 근거 문구 |
+| 8번 거부 방법·효과 | 동의하지 않거나 철회해도 | 보내지 않기를 골라도 |
+| `/privacy` 이용 통계 분석 설명 | 동의하지 않거나 철회해도 | 보내지 않기를 골라도 |
+| 안내 버전 `CONSENT_VERSION` | 2026-10-21 | 변경일로 올림(거부 이력은 유지됨) |
+- `consent` 모드 문구는 그대로 두고 모드별로 나눠서 바꿈 → 안내문 PR을 먼저 병합·배포해도 Production(`consent`) 화면은 바뀌지 않고, 환경변수 전환 순간 `all` 문구가 함께 적용됨
+
+**전환 절차 (승인 후, 각 단계 별도 승인)**
+1. 안내문 변경 PR(승인된 문구) → CI → 병합 승인 → Production 배포(아직 `consent`라 화면 변화 없음)
+2. Vercel → Settings → Environment Variables → Production `NEXT_PUBLIC_POSTHOG_ENABLED` = `all` → Deployments → 최신 Production **Redeploy**(빌드 시 고정되는 값이라 재배포 필수). Redeploy 완료 시각(KST)을 **전환 시점**으로 기록
+3. 실제 수신 확인: 휴대폰 일반 브라우저(`?qa=1` 없이) → 랜딩·테스트 → PostHog Activity에 `qa` 없는 이벤트 → KPI 대시보드 반영 → `/privacy` `보내지 않기` 후 새 이벤트 없음 → 같은 브라우저 '내 데이터 삭제' 후 PostHog Person 삭제(위 삭제 절차). QA 브라우저(`?qa=1`) 이벤트는 KPI에 안 보이고 QA Monitor에만 보임
+4. 다음 날 교차 확인: 전환 시점 이후 같은 기간 Supabase(QA 제외)와 PostHog KPI의 이벤트별 사용자 수 비교 — PostHog ≤ Supabase(차이 = 보내지 않기·광고 차단·봇). PostHog가 더 많으면 오류
+5. 분석 기준: 전환 시점 이전 = Supabase(`docs/ANALYTICS_QUERIES.md`), 이후 = PostHog KPI(Supabase는 원본으로 계속 저장·교차 확인용). 과거 데이터는 PostHog로 옮기지 않음
+- 되돌리기: 같은 변수를 `consent`(또는 `off`)로 바꾸고 Redeploy
 
 **대안: PostHog 임시 비활성화(`off`)**
 - Vercel `NEXT_PUBLIC_POSTHOG_ENABLED=off` → Redeploy. 일반 사용자·QA 모두 PostHog 전송 중단, 화면의 PostHog 선택 영역·국외 이전 항목 숨김. Supabase 수집·분석(`docs/ANALYTICS_QUERIES.md`)은 그대로

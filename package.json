@@ -27,6 +27,7 @@
     "test:items": "tsx scripts/test-items.ts",
     "test:analytics": "tsx scripts/test-analytics.ts && tsx scripts/test-dashboards.mts",
     "e2e:consent": "node scripts/e2e-posthog-consent.mjs",
+    "e2e:all": "node scripts/e2e-posthog-all.mjs",
     "posthog:check": "node scripts/posthog/check-dashboards.mjs",
     "posthog:dashboard": "node scripts/posthog/create-dashboard.mjs"
   },

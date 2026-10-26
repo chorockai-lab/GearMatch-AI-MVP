@@ -1,7 +1,7 @@
 // PostHog policy (src/lib/analytics/posthog-policy.ts). Run: npm run test:analytics
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { ALLOWED_PROPS, CONSENT_VERSION, effectiveChoice, mayHaveSent, resolveMode, sanitizeProps, scrubEventProperties, shouldSend, stripUrl, SUPABASE_ONLY_EVENTS } from "../src/lib/analytics/posthog-policy";
+import { ALLOWED_PROPS, carryOverConsent, CONSENT_VERSION, effectiveChoice, mayHaveSent, resolveMode, sanitizeProps, scrubEventProperties, shouldSend, stripUrl, SUPABASE_ONLY_EVENTS } from "../src/lib/analytics/posthog-policy";
 
 let failures = 0;
 const check = (ok: boolean, msg: string) => {
@@ -36,6 +36,17 @@ check(effectiveChoice({ stats: "granted", transfer: "granted", version: V }) ===
 check(effectiveChoice({ stats: "granted", transfer: "granted", version: "2000-01-01" }) === null, "consent: agreed to an older notice version → must agree again");
 check(effectiveChoice({ stats: "granted", transfer: "denied", version: V }) === "denied" && effectiveChoice({ stats: "denied", transfer: "granted", version: V }) === "denied", "consent: either item withdrawn → denied");
 check(!shouldSend("consent", false, effectiveChoice({ stats: "granted", transfer: null, version: V })) && shouldSend("consent", false, effectiveChoice({ stats: "granted", transfer: "granted", version: V })), "consent mode sends only with both consents");
+const oldDenied = carryOverConsent({ stats: "denied", transfer: "granted", version: "2000-01-01" });
+check(oldDenied.stats === "denied" && oldDenied.transfer === null && effectiveChoice(oldDenied) === "denied", "notice version changed: a refusal stays, an old consent is dropped");
+check(JSON.stringify(carryOverConsent({ stats: "granted", transfer: "granted", version: V })) === JSON.stringify({ stats: "granted", transfer: "granted", version: V }), "current notice version: choices kept as they are");
+for (const c of [
+  { stats: "denied", transfer: "denied", version: "2000-01-01" },
+  { stats: "granted", transfer: "denied", version: V },
+  { stats: "granted", transfer: "granted", version: "2000-01-01" },
+  { stats: null, transfer: null, version: null },
+] as const)
+  check(effectiveChoice(carryOverConsent(c)) === effectiveChoice(c), `/privacy status = what is sent (${JSON.stringify(c)})`);
+check(!shouldSend("all", false, effectiveChoice({ stats: "denied", transfer: null, version: "2000-01-01" })) && shouldSend("all", false, effectiveChoice({ stats: "granted", transfer: null, version: "2000-01-01" })), "all mode: an earlier refusal keeps the browser out; an old or partial consent is no refusal");
 
 // ── props allowlist ─────────────────────────────────────────────────────────
 const s = sanitizeProps({
