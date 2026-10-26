@@ -16,7 +16,7 @@ export const PRIVACY_PHONE = "02-534-2007";
 const POSTHOG_USERS = POSTHOG_MODE === "consent" || POSTHOG_MODE === "all";
 const POSTHOG_REFUSE =
   POSTHOG_MODE === "consent"
-    ? "첫 화면이나 아래 ‘이용 통계 분석’에서 두 항목(이용 통계 분석·국외 이전)에 모두 동의한 경우에만 보냅니다"
+    ? "아래 ‘이용 통계 분석’에서 두 항목(이용 통계 분석·국외 이전)에 모두 동의한 경우에만 보냅니다"
     : "아래 ‘이용 통계 분석’에서 ‘보내지 않기’를 고르면 보내지 않습니다";
 
 

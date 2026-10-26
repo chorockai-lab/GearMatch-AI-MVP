@@ -107,7 +107,14 @@ async function browser() {
     await sleep(ms);
   };
   b.click = (text) => b.eval(`(() => { const el = [...document.querySelectorAll('button')].find((x) => x.innerText.trim().startsWith(${JSON.stringify(text)})); if (!el) return false; el.click(); return true; })()`);
-  b.check = (index) => b.eval(`(() => { const el = document.querySelectorAll('input[type=checkbox]')[${index}]; if (!el) return false; el.click(); return true; })()`);
+  // consent is given on /privacy only (the Landing just informs since 2026-10-26): item 0 = 이용 통계 분석, 1 = 국외 이전
+  b.grant = async (...items) => {
+    await b.go("/privacy", 3500);
+    for (const i of items) {
+      await b.eval(`[...document.querySelectorAll('#analytics button')][${i}].click(); true`);
+      await sleep(400);
+    }
+  };
   b.local = () => b.eval(`({ consent: localStorage.getItem('gearmatch.analytics'), sent: localStorage.getItem('gearmatch.analytics_sent'), phStorage: Object.keys(localStorage).filter((k) => k.startsWith('ph_')).length })`);
   b.events = () => b.ph.map((e) => e.event).filter((n) => n && !n.startsWith("$"));
   b.flags = (reason) => b.ph.filter((e) => e.set?.gm_deletion_requested && (!reason || e.set.gm_deletion_reason === reason)).length;
@@ -137,7 +144,7 @@ async function browser() {
 {
   const b = await browser();
   await b.go("/");
-  check(await b.eval(`document.querySelectorAll('input[type=checkbox]').length === 2 && [...document.querySelectorAll('input[type=checkbox]')].every((c) => !c.checked)`), "동의 전: Landing shows the two consent items, both unchecked");
+  check(await b.eval(`document.querySelectorAll('input[type=checkbox]').length === 0 && document.body.innerText.includes('서비스 개선을 위해 이용 기록을 분석합니다.') && [...document.querySelectorAll('a')].some((a) => a.innerText.includes('자세히 보기') && a.getAttribute('href') === '/privacy')`), "Landing: no consent checkboxes; the analytics notice and the privacy link are shown");
   await b.go("/test/1");
   const s = await b.local();
   check(b.ph.length === 0 && s.phStorage === 0, `동의 전: no PostHog request and no PostHog storage (requests ${b.ph.length})`);
@@ -151,12 +158,12 @@ async function browser() {
 {
   const b = await browser();
   await b.go("/");
-  await b.check(0); // 이용 통계 분석 only
+  await b.grant(0); // 이용 통계 분석 only
   await sleep(1500);
   await b.go("/test/1");
   check(b.ph.length === 0, `한 항목만 동의: nothing sent to PostHog (${b.ph.length})`);
   const rows = b.consentRows();
-  check(rows.length === 1 && rows[0].stats === "granted" && rows[0].transfer === null && rows[0].source === "landing" && /^\d{4}-\d{2}-\d{2}$/.test(rows[0].version ?? ""), `한 항목만 동의: consent recorded in Supabase ${JSON.stringify(rows[0] ?? null)}`);
+  check(rows.length === 1 && rows[0].stats === "granted" && rows[0].transfer === null && rows[0].source === "privacy" && /^\d{4}-\d{2}-\d{2}$/.test(rows[0].version ?? ""), `한 항목만 동의: consent recorded in Supabase ${JSON.stringify(rows[0] ?? null)}`);
   await b.deleteMyData();
   check(b.ph.length === 0, "한 항목만 동의 → 삭제: no PostHog request");
   await b.close();
@@ -166,8 +173,7 @@ async function browser() {
 {
   const b = await browser();
   await b.go("/");
-  await b.check(0);
-  await b.check(1);
+  await b.grant(0, 1);
   await sleep(1500);
   await b.go("/test/1", 6000);
   const sent = b.events();
@@ -194,8 +200,7 @@ async function browser() {
 {
   const b = await browser();
   await b.go("/");
-  await b.check(0);
-  await b.check(1);
+  await b.grant(0, 1);
   await sleep(1500);
   await b.go("/test/1", 6000);
   check(b.events().length > 0, "동의 후: events sent");
@@ -210,8 +215,7 @@ async function browser() {
   const b = await browser();
   b.failConsent = 2;
   await b.go("/");
-  await b.check(0);
-  await b.check(1);
+  await b.grant(0, 1);
   await sleep(300);
   await b.go("/test/1", 1500); // reload while the record is still failing
   const early = b.events().length;
