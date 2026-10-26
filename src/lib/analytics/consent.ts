@@ -1,4 +1,6 @@
-// The two optional PostHog consents (이용 통계 분석 · 미국 국외 이전), set on the Landing or on /privacy (docs/POSTHOG.md).
+// The two optional PostHog consents (이용 통계 분석 · 미국 국외 이전), set on /privacy (docs/POSTHOG.md). The Landing only
+// informs ("서비스 개선을 위해 이용 기록을 분석합니다.") — viewing it or starting the test is never treated as consent.
+// Records made on the Landing before 2026-10-26 keep source "landing".
 //   • stored in this browser (lib/analytics/posthog.ts) and applied at once — PostHog sends only when both are granted
 //   • every change is recorded in Supabase `events` as `analytics_consent` via trackReliable() — queued and retried until
 //     Supabase confirms it; PostHog sends nothing while a record is unconfirmed (choices · notice version · source; the row's
