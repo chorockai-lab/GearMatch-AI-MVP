@@ -10,14 +10,13 @@
 import { isQaSession, trackReliable } from "@/lib/events/track";
 import { ensureUserId } from "@/lib/supabase/client";
 import { consentState, flagPostHogDeletion, POSTHOG_MODE, saveConsentState } from "./posthog";
-import { CONSENT_VERSION, NO_CONSENT, shouldSend, type ConsentItem, type ConsentState } from "./posthog-policy";
+import { carryOverConsent, CONSENT_VERSION, shouldSend, type ConsentItem, type ConsentState } from "./posthog-policy";
 
 export type ConsentSource = "landing" | "privacy";
 
-/** The consents that count now: a consent given to an older notice version is treated as not given. */
+/** The consents that count now: a consent given to an older notice version is treated as not given; a refusal stays. */
 export function currentConsent(): ConsentState {
-  const c = consentState();
-  return c.version === CONSENT_VERSION ? c : NO_CONSENT;
+  return carryOverConsent(consentState());
 }
 
 export function setConsent(items: Partial<Record<ConsentItem, "granted" | "denied">>, source: ConsentSource): ConsentState {

@@ -35,6 +35,16 @@ export function effectiveChoice(c: ConsentState, current: string = CONSENT_VERSI
   return null; // one item missing, or agreed to an older notice
 }
 
+/**
+ * The stored choices that still count under the current notice: a consent given to an older version is dropped (must agree
+ * again), but a refusal never expires — so the /privacy status matches effectiveChoice() after CONSENT_VERSION changes.
+ */
+export function carryOverConsent(c: ConsentState, current: string = CONSENT_VERSION): ConsentState {
+  if (c.version === current) return c;
+  const keep = (v: ConsentValue): ConsentValue => (v === "denied" ? "denied" : null);
+  return { stats: keep(c.stats), transfer: keep(c.transfer), version: null };
+}
+
 /** Browser queue of must-keep Supabase rows (consent records) not yet confirmed by Supabase — see trackReliable(). */
 export const PENDING_EVENTS_KEY = "gearmatch.events_pending";
 
