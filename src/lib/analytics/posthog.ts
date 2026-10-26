@@ -10,6 +10,7 @@ import {
   effectiveChoice,
   mayHaveSent,
   NO_CONSENT,
+  noticeVersion,
   posthogProps,
   resolveMode,
   scrubEventProperties,
@@ -21,11 +22,15 @@ import {
   type PostHogMode,
 } from "./posthog-policy";
 
+const ALL_SINCE = process.env.NEXT_PUBLIC_POSTHOG_ALL_SINCE; // KST date `all` took effect (YYYY-MM-DD)
 export const POSTHOG_MODE: PostHogMode = resolveMode(
   process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
   process.env.NEXT_PUBLIC_POSTHOG_HOST,
   process.env.NEXT_PUBLIC_POSTHOG_ENABLED,
+  ALL_SINCE,
 );
+/** The PostHog notice in force (shown on /privacy, stored with each choice): CONSENT_VERSION, or the `all` start date. */
+export const NOTICE_VERSION = noticeVersion(POSTHOG_MODE, ALL_SINCE);
 
 const CONSENT_KEY = "gearmatch.analytics"; // JSON ConsentState — the two optional consents (landing · /privacy)
 const SENT_KEY = "gearmatch.analytics_sent"; // "1" once this browser captured to PostHog — cleared by deletion / withdrawal
@@ -45,7 +50,7 @@ export function consentState(): ConsentState {
 
 /** The effective choice for sending (both consents under the current notice version). */
 export function analyticsChoice(): AnalyticsChoice {
-  return effectiveChoice(consentState());
+  return effectiveChoice(consentState(), NOTICE_VERSION);
 }
 
 /** A consent record still waiting for Supabase — PostHog waits too, so no PostHog data exists without a stored consent. */

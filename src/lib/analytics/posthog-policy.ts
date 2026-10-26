@@ -82,11 +82,28 @@ export function posthogProps(name: string, props: Record<string, unknown>): Reco
   return sanitizeProps(Object.fromEntries(Object.entries(props).filter(([k]) => k === "qa" || keep.includes(k))));
 }
 
-export function resolveMode(token: string | undefined, host: string | undefined, flag: string | undefined): PostHogMode {
+/** "2026-10-27" → a real calendar date (YYYY-MM-DD) or null. */
+export function validDate(v: string | undefined): string | null {
+  if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+  const d = new Date(`${v}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v ? v : null;
+}
+
+/**
+ * `all` also needs `allSince` (NEXT_PUBLIC_POSTHOG_ALL_SINCE, the KST date opt-out took effect): it is the notice version
+ * and the change date on /privacy. Without a valid date `all` runs as `consent` — never opt-out on an undated notice.
+ */
+export function resolveMode(token: string | undefined, host: string | undefined, flag: string | undefined, allSince?: string): PostHogMode {
   // A PostHog project API key always starts with "phc_". Anything else (a project id, a personal key "phx_", a typo)
   // would be accepted by the ingestion endpoint with HTTP 200 but land in no project — so stay off instead.
   if (!token || !/^phc_[A-Za-z0-9]+$/.test(token) || !host || !/^https:\/\//.test(host)) return "off";
-  return flag === "qa" || flag === "consent" || flag === "all" ? flag : "off";
+  if (flag === "all") return validDate(allSince) ? "all" : "consent";
+  return flag === "qa" || flag === "consent" ? flag : "off";
+}
+
+/** Version of the PostHog notice in force: the opt-out start date in `all` mode, otherwise CONSENT_VERSION. */
+export function noticeVersion(mode: PostHogMode, allSince?: string): string {
+  return (mode === "all" && validDate(allSince)) || CONSENT_VERSION;
 }
 
 /** Whether this browser's events may be sent. Internal QA sessions always send unless PostHog is off. */

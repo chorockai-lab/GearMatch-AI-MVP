@@ -9,18 +9,18 @@
 //   • withdrawing after PostHog already received events flags the PostHog person for deletion (gm_deletion_reason: withdrawn)
 import { isQaSession, trackReliable } from "@/lib/events/track";
 import { ensureUserId } from "@/lib/supabase/client";
-import { consentState, flagPostHogDeletion, POSTHOG_MODE, saveConsentState } from "./posthog";
-import { carryOverConsent, CONSENT_VERSION, shouldSend, type ConsentItem, type ConsentState } from "./posthog-policy";
+import { consentState, flagPostHogDeletion, NOTICE_VERSION, POSTHOG_MODE, saveConsentState } from "./posthog";
+import { carryOverConsent, shouldSend, type ConsentItem, type ConsentState } from "./posthog-policy";
 
 export type ConsentSource = "landing" | "privacy";
 
 /** The consents that count now: a consent given to an older notice version is treated as not given; a refusal stays. */
 export function currentConsent(): ConsentState {
-  return carryOverConsent(consentState());
+  return carryOverConsent(consentState(), NOTICE_VERSION);
 }
 
 export function setConsent(items: Partial<Record<ConsentItem, "granted" | "denied">>, source: ConsentSource): ConsentState {
-  const next: ConsentState = { ...currentConsent(), ...items, version: CONSENT_VERSION };
+  const next: ConsentState = { ...currentConsent(), ...items, version: NOTICE_VERSION };
   const { before, after } = saveConsentState(next);
   void trackReliable("analytics_consent", { stats: next.stats, transfer: next.transfer, version: next.version, source });
   // stopped sending (consent withdrawn, or opted out in all mode) → ask PostHog-side deletion of what was already sent

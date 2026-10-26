@@ -1,5 +1,5 @@
 // PostHog `all` (opt-out) E2E (docs/POSTHOG.md). Drives a real Chrome against a LOCAL build in server + all mode:
-//   NEXT_PUBLIC_DATA_MODE=real NEXT_PUBLIC_POSTHOG_ENABLED=all npm run build && npm run start -- -p 3001
+//   NEXT_PUBLIC_DATA_MODE=real NEXT_PUBLIC_POSTHOG_ENABLED=all NEXT_PUBLIC_POSTHOG_ALL_SINCE=2026-10-27 npm run build && npm run start -- -p 3001
 //   npm run e2e:all                (BASE=http://localhost:3001 by default; CHROME=path to override the browser)
 // Checks the code path only — switching Production to `all` still needs the legal approval in docs/POSTHOG.md.
 // Safety (scripts/e2e-harness.mjs): every PostHog request is intercepted and answered locally (nothing reaches PostHog). The
@@ -23,6 +23,9 @@ const buttons = (b) => b.eval(`[...document.querySelectorAll('#analytics button'
   await b.go("/privacy", 3500);
   check(JSON.stringify(await buttons(b)) === JSON.stringify(["보내지 않기"]) && (await status(b)) === "지금: 보내는 중", `개인정보 안내: one opt-out switch, status 보내는 중 (${JSON.stringify(await buttons(b))})`);
   check(await b.eval(`document.body.innerText.includes('‘보내지 않기’를 고르면 보내지 않습니다')`), "개인정보 안내: the PostHog items say how to refuse (보내지 않기)");
+  const since = process.env.ALL_SINCE ?? "2026-10-27"; // the NEXT_PUBLIC_POSTHOG_ALL_SINCE of the build
+  const [y, m, d] = since.split("-").map(Number);
+  check(await b.eval(`document.body.innerText.includes('안내 버전 ${since}') && document.body.innerText.includes('변경(${y}년 ${m}월 ${d}일)')`), `개인정보 안내: notice version and change date = the all start date (${since})`);
   const done = await b.deleteMyData();
   check(b.flags("deleted") === 1 && done === "데이터를 삭제했어요." && b.rpc.includes(200), `삭제: one PostHog deletion flag (deleted) + Supabase account deleted (${b.flags("deleted")})`);
   await b.close();

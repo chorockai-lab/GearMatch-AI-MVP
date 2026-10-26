@@ -1,7 +1,7 @@
 // PostHog policy (src/lib/analytics/posthog-policy.ts). Run: npm run test:analytics
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { ALLOWED_PROPS, carryOverConsent, CONSENT_VERSION, effectiveChoice, mayHaveSent, POSTHOG_EVENTS, posthogProps, resolveMode, sanitizeProps, scrubEventProperties, shouldSend, stripUrl, SUPABASE_ONLY_EVENTS } from "../src/lib/analytics/posthog-policy";
+import { ALLOWED_PROPS, carryOverConsent, CONSENT_VERSION, effectiveChoice, mayHaveSent, noticeVersion, POSTHOG_EVENTS, posthogProps, resolveMode, sanitizeProps, scrubEventProperties, shouldSend, stripUrl, SUPABASE_ONLY_EVENTS } from "../src/lib/analytics/posthog-policy";
 
 let failures = 0;
 const check = (ok: boolean, msg: string) => {
@@ -15,7 +15,10 @@ check(resolveMode(undefined, H, "all") === "off", "no token → off");
 check(resolveMode("phc_x", undefined, "all") === "off", "no host → off");
 check(resolveMode("phc_x", "http://insecure", "all") === "off", "non-https host → off");
 check(resolveMode("phc_x", H, undefined) === "off" && resolveMode("phc_x", H, "yes") === "off", "flag missing / unknown → off");
-check(resolveMode("phc_x", H, "qa") === "qa" && resolveMode("phc_x", H, "all") === "all" && resolveMode("phc_x", H, "consent") === "consent", "qa / consent / all");
+check(resolveMode("phc_x", H, "qa") === "qa" && resolveMode("phc_x", H, "all", "2026-10-27") === "all" && resolveMode("phc_x", H, "consent") === "consent", "qa / consent / all");
+check(resolveMode("phc_x", H, "all") === "consent" && resolveMode("phc_x", H, "all", "2026-13-40") === "consent" && resolveMode("phc_x", H, "all", "27.10.2026") === "consent", "all without a valid start date → runs as consent");
+check(noticeVersion("all", "2026-10-27") === "2026-10-27" && noticeVersion("consent", "2026-10-27") === CONSENT_VERSION, "notice version: all start date in all mode, consent version otherwise");
+check(effectiveChoice(carryOverConsent({ stats: "granted", transfer: "denied", version: CONSENT_VERSION }, "2026-10-27"), "2026-10-27") === "denied", "switching to all: a refusal under the consent notice is kept");
 check(resolveMode("ABCDefgh1234567890abcdefghijklmno", H, "qa") === "off", "token without phc_ (e.g. a project id) → off");
 check(resolveMode("phx_personalkey123", H, "qa") === "off", "personal API key (phx_) → off");
 check(resolveMode("phc_abc 123", H, "qa") === "off" && resolveMode('"phc_abc"', H, "qa") === "off", "token with spaces / quotes → off");

@@ -6,8 +6,7 @@
 // Remaining items approved by the in-house privacy officer on 2026-10-22 (approval sheet items 1–5, item 2 = 안 A).
 // Facts here must match the code and DB: supabase/migrations/*.sql, src/lib/events/track.ts, src/lib/analytics/*.
 
-import { POSTHOG_MODE } from "@/lib/analytics/posthog";
-import { CONSENT_VERSION } from "@/lib/analytics/posthog-policy";
+import { NOTICE_VERSION, POSTHOG_MODE } from "@/lib/analytics/posthog";
 
 export const PRIVACY_EMAIL = "chorock@chorock.co.kr";
 export const PRIVACY_PHONE = "02-534-2007";
@@ -18,6 +17,11 @@ const POSTHOG_REFUSE =
   POSTHOG_MODE === "consent"
     ? "아래 ‘이용 통계 분석’에서 두 항목(이용 통계 분석·국외 이전)에 모두 동의한 경우에만 보냅니다"
     : "아래 ‘이용 통계 분석’에서 ‘보내지 않기’를 고르면 보내지 않습니다";
+/** "2026-10-27" → "2026년 10월 27일" */
+const koreanDate = (v: string) => {
+  const [y, m, d] = v.split("-").map(Number);
+  return `${y}년 ${m}월 ${d}일`;
+};
 /** all = opt-out: no separate consent; the wording below changes only in that mode (consent-mode text stays as approved). */
 const OPT_OUT = POSTHOG_MODE === "all";
 const POSTHOG_SENT = OPT_OUT // = POSTHOG_EVENTS in lib/analytics/posthog-policy.ts
@@ -216,7 +220,7 @@ export function PrivacyNotice() {
               <dd className="m-0 mt-1">
                 거부 방법·효과: {POSTHOG_REFUSE}. {OPT_OUT ? "‘보내지 않기’를 골라도" : "동의하지 않거나 철회해도"} 서비스 이용에는 영향이 없습니다.
               </dd>
-              <dd className="m-0 mt-1 text-[14px] text-gm-g2">안내 버전 {CONSENT_VERSION}</dd>
+              <dd className="m-0 mt-1 text-[14px] text-gm-g2">안내 버전 {NOTICE_VERSION}</dd>
             </div>
           )}
           <div className="py-3 last:pb-0">
@@ -283,7 +287,7 @@ export function PrivacyNotice() {
       <Section n={14} title="시행일">
         2026년 10월 19일. 이 안내를 게시하기 전부터 서비스를 이용한 테스터에게는 이 안내를 직접 전달합니다.
         {OPT_OUT &&
-          " 변경: PostHog 이용 통계 분석을 동의한 경우에만 보내던 방식에서 ‘보내지 않기’로 거부할 수 있는 방식으로 바꿨습니다. 이전에 동의하지 않거나 철회한 경우는 계속 보내지 않습니다."}
+          ` 변경(${koreanDate(NOTICE_VERSION)}): PostHog 이용 통계 분석을 동의한 경우에만 보내던 방식에서 ‘보내지 않기’로 거부할 수 있는 방식으로 바꿨습니다. 이전에 동의하지 않거나 철회한 경우는 계속 보내지 않습니다.`}
       </Section>
     </div>
   );
